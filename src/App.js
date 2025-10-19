@@ -1,16 +1,16 @@
 import React from 'react';
 import './App.css';
+import Header from './components/Header';
+import Hero from './components/Hero';
+import Footer from './components/Footer';
 
 function App() {
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>Groovesheet</h1>
-        <p>Music Production Web App</p>
-      </header>
-      <main className="app-main">
-        <p>Welcome to Groovesheet. Your music production starts here.</p>
-      </main>
+      <div className="dot-grid"></div>
+      <Header />
+      <Hero />
+      <Footer />
     </div>
   );
 }
