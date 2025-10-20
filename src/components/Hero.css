@@ -22,7 +22,7 @@
   justify-content: space-between;
   width: 100%;
   max-width: 660px;
-  gap: 40px;
+  min-height: 620px;
 }
 
 .hero-text {
@@ -64,23 +64,25 @@
 .upload-area {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   width: 100%;
   max-width: 586px;
   min-height: 620px;
   padding: 40px;
-  border: 4px dashed #E8E8E8;
+  border: 4px dashed #e8e8e8;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(11.8px);
   box-sizing: border-box;
+  gap: 40px;
 }
 
 .upload-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
+  gap: 24px;
+  padding-bottom: 0;
 }
 
 .upload-icon {
@@ -94,6 +96,7 @@
   align-items: center;
   gap: 8px;
   text-align: center;
+  margin-bottom: 0;
 }
 
 .upload-text h3 {
@@ -120,7 +123,7 @@
   height: 98px;
   padding: 1px;
   border-radius: 6px;
-  background: #012FA7;
+  background: #012fa7;
   border: none;
   color: #fff;
   font-size: 24px;
@@ -139,13 +142,13 @@
     flex-direction: column;
     align-items: center;
   }
-  
+
   .hero-content {
     max-width: 100%;
     text-align: center;
     align-items: center;
   }
-  
+
   .upload-area {
     max-width: 100%;
   }
@@ -156,22 +159,22 @@
     font-size: 48px;
     line-height: 52px;
   }
-  
+
   .hero-subtitle {
     font-size: 20px;
     line-height: 28px;
   }
-  
+
   .upload-text h3 {
     font-size: 32px;
     line-height: 36px;
   }
-  
+
   .upload-area {
     min-height: 500px;
     padding: 30px;
   }
-  
+
   .browse-btn {
     height: 70px;
     font-size: 20px;

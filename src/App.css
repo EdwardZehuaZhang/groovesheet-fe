@@ -1,8 +1,7 @@
 /* Global font override to ensure all text uses Hubot Sans */
 * {
   font-family: 'Hubot Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif !important;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
 .app-container {
@@ -19,14 +18,27 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: radial-gradient(circle, #171E43 1.5px, transparent 1.5px);
+  background-image: radial-gradient(circle, #171e43 1.5px, transparent 1.5px);
   background-size: 43px 43px;
   background-position: 0 0;
   pointer-events: none;
   z-index: 0;
 }
 
-.app-container > * {
-  position: relative;
+.hero-background {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+  pointer-events: none;
   z-index: 1;
+}
+
+.app-container > *:not(.dot-grid):not(.hero-background) {
+  position: relative;
+  z-index: 10;
 }

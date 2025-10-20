@@ -13,6 +13,10 @@ function App() {
   return (
     <div className="app-container">
       <div className="dot-grid"></div>
+      <div
+        className="hero-background"
+        style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/images/Hero_Background.png)` }}
+      ></div>
       <Header />
       <Hero />
       <Features />
