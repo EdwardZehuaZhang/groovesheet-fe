@@ -1,0 +1,165 @@
+.compare-plans {
+  width: 100%;
+  padding: 80px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.compare-container {
+  width: 100%;
+  max-width: 1190px;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.compare-title {
+  font-family: 'Hubot Sans', -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 44px;
+  color: #F4F4F4;
+  text-align: center;
+  margin: 0 0 60px 0;
+}
+
+.compare-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.compare-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.compare-header-row {
+  display: flex;
+  padding: 12px 0 36px 0;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.compare-row {
+  display: flex;
+  padding: 13px 0 12px 0;
+  justify-content: center;
+  align-items: flex-start;
+  border-top: 1px solid rgba(244, 244, 244, 0.10);
+}
+
+.compare-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.compare-cell.empty {
+  max-width: 225px;
+}
+
+.compare-cell.feature-name {
+  max-width: 225px;
+}
+
+.compare-cell.plan-header {
+  padding: 0 48px;
+  max-width: 333.5px;
+}
+
+.compare-cell.feature-value {
+  padding: 0 48px;
+  max-width: 333.5px;
+}
+
+.plan-header-name {
+  font-family: 'Hubot Sans', -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 32px;
+  color: #BBBABB;
+  margin: 0;
+}
+
+.feature-label {
+  font-family: 'Hubot Sans', -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #8D8C8D;
+}
+
+.feature-value span {
+  font-family: 'Hubot Sans', -apple-system, Roboto, Helvetica, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #F4F4F4;
+}
+
+.feature-value .dash {
+  color: #8D8C8D;
+}
+
+.checkmark {
+  width: 24px;
+  height: 24px;
+}
+
+@media (max-width: 1024px) {
+  .compare-cell.plan-header,
+  .compare-cell.feature-value {
+    padding: 0 24px;
+  }
+
+  .compare-cell.feature-name {
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .compare-plans {
+    padding: 60px 0;
+  }
+
+  .compare-title {
+    font-size: 32px;
+    line-height: 36px;
+    margin-bottom: 40px;
+  }
+
+  .compare-table {
+    min-width: 700px;
+  }
+
+  .compare-cell.plan-header,
+  .compare-cell.feature-value {
+    padding: 0 16px;
+  }
+
+  .plan-header-name {
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+  .feature-label,
+  .feature-value span {
+    font-size: 16px;
+    line-height: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .compare-title {
+    font-size: 28px;
+    line-height: 32px;
+  }
+
+  .compare-table {
+    min-width: 600px;
+  }
+}
