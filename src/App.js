@@ -4,6 +4,9 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
+import Testimonials from './components/Testimonials';
+import ComparePlans from './components/ComparePlans';
+import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 
 function App() {
@@ -14,6 +17,9 @@ function App() {
       <Hero />
       <Features />
       <Pricing />
+      <Testimonials />
+      <ComparePlans />
+      <FAQ />
       <Footer />
     </div>
   );
