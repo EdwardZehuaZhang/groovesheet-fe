@@ -29,7 +29,7 @@
 
 .features-title {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 40px;
   font-weight: 400;
   line-height: 52px;
@@ -43,7 +43,7 @@
 
 .features-description {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 20px;
   font-weight: 400;
   line-height: 24px;
@@ -123,7 +123,7 @@
 
 .feature-card-title {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 24px;
   font-weight: 400;
   line-height: 31.2px;
@@ -132,7 +132,7 @@
 
 .feature-card-text {
   color: #8D8C8D;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 20.8px;

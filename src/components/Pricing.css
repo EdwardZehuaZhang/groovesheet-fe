@@ -35,7 +35,7 @@
 
 .pricing-title {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 40px;
   font-weight: 400;
   line-height: 52px;
@@ -47,7 +47,7 @@
   width: 100%;
   max-width: 430px;
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 20px;
   font-weight: 400;
   line-height: 24px;
@@ -66,7 +66,7 @@
   background: none;
   border: none;
   color: #8D8C8D;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 24px;
   font-weight: 400;
   line-height: 32px;
@@ -108,7 +108,7 @@
   background: none;
   border: none;
   color: #8D8C8D;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -162,7 +162,7 @@
 
 .popular-badge {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 16px;
   font-weight: 600;
   line-height: 20.8px;
@@ -195,7 +195,7 @@
 
 .plan-name {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 24px;
   font-weight: 500;
   line-height: 31.2px;
@@ -204,7 +204,7 @@
 
 .plan-badge {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 12px;
   font-weight: 600;
   line-height: 18px;
@@ -219,7 +219,7 @@
 
 .price {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 48px;
   font-weight: 300;
   line-height: 62.4px;
@@ -227,7 +227,7 @@
 
 .period {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 20.8px;
@@ -241,7 +241,7 @@
   gap: 8px;
   padding: 12px 24px;
   border-radius: 120px;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 18.2px;
@@ -282,7 +282,7 @@
 
 .plan-subtitle {
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 18px;
   font-weight: 500;
   line-height: 23.4px;
@@ -303,7 +303,7 @@
   align-items: center;
   gap: 8px;
   color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 20.8px;
