@@ -189,6 +189,13 @@
   }
 }
 
+/* Tablet: add side padding so header isn't flush to the viewport edge */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header-container {
+    padding: 0 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .header-container {
     padding: 0 16px;
