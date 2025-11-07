@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import './Header.css';
-import { LoginModal } from '../LoginModal';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import AccountIcon from '../AccountIcon';
 
-function Header() {
+function Header({ onLoginClick }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -19,14 +17,10 @@ function Header() {
 
   const openLoginModal = (e) => {
     e.preventDefault();
-    setIsLoginModalOpen(true);
     setIsMobileMenuOpen(false); // Close mobile menu when opening login
-    document.body.classList.add('modal-open');
-  };
-
-  const closeLoginModal = () => {
-    setIsLoginModalOpen(false);
-    document.body.classList.remove('modal-open');
+    if (onLoginClick) {
+      onLoginClick();
+    }
   };
 
   useEffect(() => {
@@ -41,7 +35,6 @@ function Header() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      document.body.classList.remove('modal-open');
     };
   }, [isMobileMenuOpen]);
 
@@ -190,9 +183,6 @@ function Header() {
           </>,
           document.body
         )}
-
-      {/* Login Modal */}
-      <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </header>
   );
 }

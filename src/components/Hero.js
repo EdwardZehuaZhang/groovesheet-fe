@@ -1,7 +1,259 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import './Hero.css';
 
-function Hero() {
+const API_BASE_URL = 'https://groovesheet-be-700212390421.asia-southeast1.run.app/api/v1';
+
+function Hero({ onLoginRequired }) {
+  const { isSignedIn, isLoaded } = useUser();
+  // eslint-disable-next-line no-unused-vars
+  const [file, setFile] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [jobId, setJobId] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Handle file selection
+  const handleFileChange = (selectedFile) => {
+    if (!selectedFile) return;
+
+    // Validate file type
+    const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav'];
+    if (!validTypes.includes(selectedFile.type)) {
+      setError('Please upload an MP3 or WAV file');
+      return;
+    }
+
+    // Validate file size (100MB limit)
+    const maxSize = 100 * 1024 * 1024;
+    if (selectedFile.size > maxSize) {
+      setError('File size must be less than 100MB');
+      return;
+    }
+
+    setFile(selectedFile);
+    setError(null);
+    
+    // Auto-upload after file selection
+    handleUpload(selectedFile);
+  };
+
+  // Handle upload
+  const handleUpload = async (fileToUpload) => {
+    // Check if user is logged in
+    if (!isLoaded) {
+      setError('Loading user data...');
+      return;
+    }
+
+    if (!isSignedIn) {
+      // Trigger login modal
+      if (onLoginRequired) {
+        onLoginRequired();
+      }
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('audio_file', fileToUpload);
+
+    setError(null);
+    setStatus('uploading');
+    setProgress(0);
+
+    try {
+      console.log('Uploading file to:', `${API_BASE_URL}/transcribe`);
+      const response = await fetch(`${API_BASE_URL}/transcribe`, {
+        method: 'POST',
+        body: formData,
+        mode: 'cors', // Explicitly set CORS mode
+        credentials: 'omit' // Don't send credentials for now
+      });
+
+      console.log('Upload response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Upload failed:', errorData);
+        throw new Error(errorData.detail || `Upload failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Upload successful. Job data:', data);
+      setJobId(data.job_id);
+      setStatus(data.status);
+      
+      // Start polling for status
+      pollStatus(data.job_id);
+    } catch (err) {
+      console.error('Upload error:', err);
+      
+      // Check if it's a CORS error
+      if (err.message.includes('fetch') || err.name === 'TypeError') {
+        setError('Unable to connect to server. This may be a CORS issue. Please check the console for details.');
+      } else {
+        setError(err.message || 'Failed to upload file. Please try again.');
+      }
+      setStatus(null);
+    }
+  };
+
+  // Poll job status
+  const pollStatus = async (id) => {
+    console.log('Starting to poll status for job:', id);
+    let pollCount = 0;
+    const maxPolls = 60; // Maximum 3 minutes of polling
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      console.log(`Poll attempt ${pollCount} for job ${id}`);
+      
+      try {
+        const statusUrl = `${API_BASE_URL}/status/${id}`;
+        console.log('Fetching status from:', statusUrl);
+        
+        const response = await fetch(statusUrl, {
+          mode: 'cors',
+          credentials: 'omit'
+        });
+        console.log('Status response:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Status check failed. Response:', errorText);
+          throw new Error(`Status check failed: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Status data:', data);
+        
+        setStatus(data.status);
+        setProgress(data.progress || 0);
+
+        if (data.status === 'completed') {
+          console.log('Job completed! Downloading MusicXML...');
+          clearInterval(pollInterval);
+          // Auto-download MusicXML
+          downloadMusicXML(id);
+          
+          // Reset after 3 seconds
+          setTimeout(() => {
+            resetUpload();
+          }, 3000);
+        } else if (data.status === 'failed') {
+          console.error('Job failed:', data.message);
+          clearInterval(pollInterval);
+          setError(data.message || 'Processing failed. Please try again.');
+        } else if (pollCount >= maxPolls) {
+          console.error('Polling timeout reached');
+          clearInterval(pollInterval);
+          setError('Processing is taking too long. Please check back later or try again.');
+        }
+      } catch (err) {
+        clearInterval(pollInterval);
+        console.error('Status check error:', err);
+        console.error('Error details:', {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
+        
+        // Check if it's a CORS or network error
+        if (err.message.includes('fetch') || err.name === 'TypeError') {
+          setError('Unable to connect to server. This may be a CORS issue. Please check browser console.');
+        } else {
+          setError(`Failed to check processing status: ${err.message}. Please refresh and try again.`);
+        }
+      }
+    }, 3000); // Poll every 3 seconds
+  };
+
+  // Download MusicXML file
+  const downloadMusicXML = (id) => {
+    const url = `${API_BASE_URL}/download/${id}/musicxml`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `drum_sheet_${id}.musicxml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Reset upload state
+  const resetUpload = () => {
+    setFile(null);
+    setJobId(null);
+    setStatus(null);
+    setProgress(0);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle browse button click
+  const handleBrowseClick = () => {
+    if (!isLoaded) return;
+
+    if (!isSignedIn) {
+      // Trigger login modal
+      if (onLoginRequired) {
+        onLoginRequired();
+      }
+      return;
+    }
+
+    fileInputRef.current?.click();
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      handleFileChange(droppedFile);
+    }
+  };
+
+  // Get status message
+  const getStatusMessage = () => {
+    if (error) return error;
+    
+    switch (status) {
+      case 'uploading':
+        return 'Uploading file...';
+      case 'pending':
+        return 'Processing queued...';
+      case 'separating':
+        return 'Separating drum track...';
+      case 'transcribing':
+        return 'Transcribing drums to notation...';
+      case 'generating_sheet':
+        return 'Generating sheet music...';
+      case 'completed':
+        return '✓ Download started! Processing complete.';
+      case 'failed':
+        return 'Processing failed. Please try again.';
+      default:
+        return '';
+    }
+  };
+
   return (
     <section className="hero">
       <div className="hero-container">
@@ -17,7 +269,21 @@ function Hero() {
             <a href="#terms">Terms of Service</a>
           </div>
         </div>
-        <div className="upload-area">
+        <div 
+          className={`upload-area ${isDragging ? 'dragging' : ''} ${status ? 'processing' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/mp3,audio/mpeg,audio/wav"
+            onChange={(e) => handleFileChange(e.target.files[0])}
+            style={{ display: 'none' }}
+          />
+
           <div className="upload-content">
             <div className="upload-icon">
               <svg width="64" height="65" viewBox="0 0 64 65" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,7 +302,33 @@ function Hero() {
               <p>Upload up to 20 files to turn into notation</p>
             </div>
           </div>
-          <button className="browse-btn">Browse Files</button>
+
+          {/* Status and Progress */}
+          {(status || error) && (
+            <div className="upload-status">
+              <p className={error ? 'error' : 'status-message'}>
+                {getStatusMessage()}
+              </p>
+              {status && status !== 'completed' && !error && (
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button 
+            className="browse-btn" 
+            onClick={handleBrowseClick}
+            disabled={status && status !== 'completed' && status !== 'failed'}
+          >
+            {status && status !== 'completed' && status !== 'failed' 
+              ? 'Processing...' 
+              : 'Browse Files'}
+          </button>
         </div>
       </div>
     </section>

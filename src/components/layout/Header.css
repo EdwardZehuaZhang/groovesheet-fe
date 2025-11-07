@@ -98,6 +98,14 @@
   color: #fff;
 }
 
+/* Account label in header should match language selector sizing/color */
+.account-label {
+  color: #cfd3d6;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 32px;
+}
+
 .login-btn {
   display: flex;
   align-items: center;
