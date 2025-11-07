@@ -134,16 +134,15 @@
 
 /* Mobile Menu Dropdown */
 .mobile-menu-dropdown {
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: 60px;
   right: 20px;
   background: rgba(23, 23, 23, 0.98);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  margin-top: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  z-index: 99;
+  z-index: 1000;
   min-width: 200px;
 }
 
@@ -197,6 +196,17 @@
   }
 }
 
+/* Hide mobile menu on desktop/tablet views */
+@media (min-width: 1025px) {
+  .mobile-menu-dropdown {
+    display: none !important;
+  }
+
+  .hamburger-menu {
+    display: none !important;
+  }
+}
+
 /* Tablet: add side padding so header isn't flush to the viewport edge */
 @media (min-width: 769px) and (max-width: 1024px) {
   .header-container {
@@ -224,6 +234,7 @@
   }
 
   .mobile-menu-dropdown {
+    top: 50px;
     right: 16px;
   }
 

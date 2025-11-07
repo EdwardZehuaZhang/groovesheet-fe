@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './Header.css';
 import { LoginModal } from '../LoginModal';
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 
 function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,9 +12,14 @@ function Header() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   const openLoginModal = (e) => {
     e.preventDefault();
     setIsLoginModalOpen(true);
+    setIsMobileMenuOpen(false); // Close mobile menu when opening login
     document.body.classList.add('modal-open');
   };
 
@@ -22,10 +29,20 @@ function Header() {
   };
 
   useEffect(() => {
+    // Close mobile menu when viewport is resized to desktop size
+    const handleResize = () => {
+      if (window.innerWidth > 1024 && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
       document.body.classList.remove('modal-open');
     };
-  }, []);
+  }, [isMobileMenuOpen]);
 
   return (
     <header className="header">
@@ -77,9 +94,23 @@ function Header() {
               />
             </svg>
           </div>
-          <button onClick={openLoginModal} className="login-btn desktop-only">
-            Log in
-          </button>
+          <SignedOut>
+            <button onClick={openLoginModal} className="login-btn desktop-only">
+              Log in
+            </button>
+          </SignedOut>
+          <SignedIn>
+            <div className="desktop-only">
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: 'w-10 h-10',
+                  },
+                }}
+              />
+            </div>
+          </SignedIn>
 
           {/* Mobile Hamburger Menu */}
           <button className="hamburger-menu" onClick={toggleMobileMenu} aria-label="Toggle menu">
@@ -90,44 +121,78 @@ function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      {isMobileMenuOpen && (
-        <div className="mobile-menu-dropdown">
-          <div className="mobile-menu-content">
-            <div className="mobile-nav-item">
-              <span>Pricing</span>
+      {/* Mobile Menu Dropdown - Rendered using Portal */}
+      {isMobileMenuOpen &&
+        ReactDOM.createPortal(
+          <>
+            {/* Backdrop overlay to close menu when clicking outside */}
+            <div
+              className="mobile-menu-backdrop"
+              onClick={closeMobileMenu}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 999,
+                background: 'transparent',
+              }}
+            />
+            <div
+              className="mobile-menu-dropdown"
+              style={{
+                position: 'fixed',
+                zIndex: 2147483647,
+              }}
+            >
+              <div className="mobile-menu-content">
+                <div className="mobile-nav-item">
+                  <span>Pricing</span>
+                </div>
+                <a href="#help" className="mobile-nav-item" onClick={closeMobileMenu}>
+                  Help
+                </a>
+                <a href="#about" className="mobile-nav-item" onClick={closeMobileMenu}>
+                  About
+                </a>
+                <a href="#blog" className="mobile-nav-item" onClick={closeMobileMenu}>
+                  Blog
+                </a>
+                <div className="mobile-menu-divider"></div>
+                <div className="mobile-nav-item">
+                  <span>En</span>
+                  <svg
+                    width="16"
+                    height="10"
+                    viewBox="0 0 17 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M8.60986 9.49994L1.10986 1.99994L2.15986 0.949938L8.60986 7.39994L15.0599 0.949938L16.1099 1.99994L8.60986 9.49994Z"
+                      fill="white"
+                    />
+                  </svg>
+                </div>
+                <SignedOut>
+                  <button onClick={openLoginModal} className="mobile-nav-item">
+                    Log in
+                  </button>
+                </SignedOut>
+                <SignedIn>
+                  <div
+                    className="mobile-nav-item"
+                    style={{ display: 'flex', justifyContent: 'center' }}
+                  >
+                    <UserButton afterSignOutUrl="/" />
+                  </div>
+                </SignedIn>
+              </div>
             </div>
-            <a href="#help" className="mobile-nav-item">
-              Help
-            </a>
-            <a href="#about" className="mobile-nav-item">
-              About
-            </a>
-            <a href="#blog" className="mobile-nav-item">
-              Blog
-            </a>
-            <div className="mobile-menu-divider"></div>
-            <div className="mobile-nav-item">
-              <span>En</span>
-              <svg
-                width="16"
-                height="10"
-                viewBox="0 0 17 10"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M8.60986 9.49994L1.10986 1.99994L2.15986 0.949938L8.60986 7.39994L15.0599 0.949938L16.1099 1.99994L8.60986 9.49994Z"
-                  fill="white"
-                />
-              </svg>
-            </div>
-            <button onClick={openLoginModal} className="mobile-nav-item">
-              Log in
-            </button>
-          </div>
-        </div>
-      )}
+          </>,
+          document.body
+        )}
 
       {/* Login Modal */}
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
