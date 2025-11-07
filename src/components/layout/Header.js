@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Header.css';
+import { LoginModal } from '../LoginModal';
 
 function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const openLoginModal = (e) => {
+    e.preventDefault();
+    setIsLoginModalOpen(true);
+    document.body.classList.add('modal-open');
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    document.body.classList.remove('modal-open');
+  };
+
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
 
   return (
     <header className="header">
@@ -58,16 +77,12 @@ function Header() {
               />
             </svg>
           </div>
-          <a href="#login" className="login-btn desktop-only">
+          <button onClick={openLoginModal} className="login-btn desktop-only">
             Log in
-          </a>
-          
+          </button>
+
           {/* Mobile Hamburger Menu */}
-          <button 
-            className="hamburger-menu" 
-            onClick={toggleMobileMenu}
-            aria-label="Toggle menu"
-          >
+          <button className="hamburger-menu" onClick={toggleMobileMenu} aria-label="Toggle menu">
             <span></span>
             <span></span>
             <span></span>
@@ -107,12 +122,15 @@ function Header() {
                 />
               </svg>
             </div>
-            <a href="#login" className="mobile-nav-item">
+            <button onClick={openLoginModal} className="mobile-nav-item">
               Log in
-            </a>
+            </button>
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </header>
   );
 }

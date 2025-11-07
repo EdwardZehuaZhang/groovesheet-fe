@@ -97,6 +97,9 @@
   text-decoration: none;
   cursor: pointer;
   transition: color 0.2s;
+  background: transparent;
+  border: none;
+  font-family: inherit;
 }
 
 .login-btn:hover {
@@ -161,6 +164,11 @@
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
 }
 
 .mobile-nav-item:hover {
