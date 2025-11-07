@@ -10,11 +10,12 @@ import {
   EnvelopeSimple,
   ArrowLeft,
 } from '@phosphor-icons/react';
-import { useSignIn, useSignUp } from '@clerk/clerk-react';
+import { useSignIn, useSignUp, useClerk } from '@clerk/clerk-react';
 
 export const LoginModal = ({ isOpen, onClose }) => {
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
+  const { setActive } = useClerk();
   const [showEmailSignIn, setShowEmailSignIn] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [email, setEmail] = useState('');
@@ -75,6 +76,18 @@ export const LoginModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    // Immediately show the verification UI so the user can enter the code
+    // while we do the sign-in / sign-up network work in the background.
+    setIsSignUp(false);
+    setShowVerification(true);
+
+    // Focus the first code input after the verification view renders.
+    // Use a short timeout to let React commit the DOM update.
+    setTimeout(() => {
+      const firstInput = document.getElementById('code-input-0');
+      if (firstInput) firstInput.focus();
+    }, 0);
+
     try {
       // First, try to sign in (for existing users)
       console.log('Attempting to sign in with email:', email);
@@ -95,8 +108,6 @@ export const LoginModal = ({ isOpen, onClose }) => {
         });
 
         console.log('Sign-in verification code sent to:', email);
-        setIsSignUp(false);
-        setShowVerification(true);
         return;
       } catch (signInError) {
         // If account doesn't exist (422 error), try sign-up instead
@@ -120,7 +131,6 @@ export const LoginModal = ({ isOpen, onClose }) => {
 
           console.log('Sign-up verification code sent to:', email);
           setIsSignUp(true);
-          setShowVerification(true);
           return;
         } else {
           // If it's a different error, throw it
@@ -222,8 +232,9 @@ export const LoginModal = ({ isOpen, onClose }) => {
 
             if (completeResult.status === 'complete') {
               console.log('Sign-up completed successfully!');
-              (await completeResult.createdSessionId) &&
-                signUp.setActive({ session: completeResult.createdSessionId });
+              if (completeResult.createdSessionId) {
+                await setActive({ session: completeResult.createdSessionId });
+              }
               onClose();
               window.location.reload();
               return;
@@ -253,7 +264,7 @@ export const LoginModal = ({ isOpen, onClose }) => {
         console.log('Authentication successful!');
         // For sign-in, set the active session
         if (!isSignUp && result.createdSessionId) {
-          await signIn.setActive({ session: result.createdSessionId });
+          await setActive({ session: result.createdSessionId });
         }
         // Close the modal and let Clerk handle the session
         onClose();
@@ -302,9 +313,10 @@ export const LoginModal = ({ isOpen, onClose }) => {
       >
         <div className="flex flex-col w-full max-w-[645px] h-auto items-start pt-7 pb-6 px-6 relative bg-[#323033] rounded-[13px] overflow-hidden border-[16px] border-solid border-[#ffffff33]">
           {!showEmailSignIn && !showVerification ? (
-            <div className="flex flex-col h-auto items-start gap-3 relative self-stretch w-full">
+            // make this initial view match the email step height and distribute space top->bottom
+            <div className="flex flex-col min-h-[373px] items-start justify-between relative self-stretch w-full">
               <div className="flex items-center justify-between relative self-stretch w-full flex-[0_0_auto] mb-8">
-                <div className="relative flex items-center justify-center w-fit [font-family:'Hubot_Sans-Regular',Helvetica] font-normal text-white text-4xl tracking-[0] leading-[31.2px] whitespace-nowrap">
+                <div className="relative flex items-center justify-center w-fit [font-family:'Hubot_Sans-Regular',Helvetica] font-normal text-white text-4xl tracking-[0] leading-[31.2px] sm:whitespace-nowrap">
                   Welcome to DrumScore
                 </div>
 
@@ -317,7 +329,7 @@ export const LoginModal = ({ isOpen, onClose }) => {
                 </button>
               </div>
 
-              <div className="flex flex-col h-auto items-start justify-center gap-3 relative self-stretch w-full">
+              <div className="flex flex-col items-start gap-3 relative self-stretch w-full">
                 <div className="relative flex items-start justify-start self-stretch [font-family:'Hubot_Sans-Regular',Helvetica] font-normal text-white text-2xl tracking-[0] leading-[normal]">
                   Continue with
                 </div>
@@ -328,12 +340,13 @@ export const LoginModal = ({ isOpen, onClose }) => {
                   </div>
 
                   <p className="relative flex items-center justify-center w-fit [font-family:'Hubot_Sans-Light',Helvetica] font-light text-white text-sm tracking-[0] leading-4 whitespace-nowrap">
-                    Subscribe to DrumScore updates and never miss a beat!
+                    <span className="hidden sm:inline">Subscribe to DrumScore updates and never miss a beat!</span>
+                    <span className="sm:hidden">Subscribe to DrumScore updates</span>
                   </p>
                 </div>
 
-                <div className="flex flex-col items-start gap-3 relative flex-1 self-stretch w-full grow">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full relative">
+                <div className="flex flex-col items-start gap-3 self-stretch w-full relative flex-[0_0_auto]">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full relative">
                     <button
                       onClick={handleGoogleSignIn}
                       className="auth-button bg-[linear-gradient(0deg,rgba(0,0,0,0.1)_0%,rgba(0,0,0,0.1)_100%)] flex flex-col items-start justify-between pt-2 pb-4 px-3 relative rounded-md overflow-hidden hover:bg-[linear-gradient(0deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.2)_100%)] transition-all"
@@ -347,7 +360,7 @@ export const LoginModal = ({ isOpen, onClose }) => {
                         Google
                       </div>
 
-                      <div className="relative w-11 h-11 mt-6">
+                      <div className="auth-icon relative w-11 h-11 mt-6">
                         <GoogleLogo size={44} color="white" weight="fill" />
                       </div>
                     </button>
@@ -365,7 +378,7 @@ export const LoginModal = ({ isOpen, onClose }) => {
                         Facebook
                       </div>
 
-                      <div className="relative w-11 h-11 mt-6">
+                      <div className="auth-icon relative w-11 h-11 mt-6">
                         <FacebookLogo size={44} color="white" weight="fill" />
                       </div>
                     </button>
@@ -383,7 +396,7 @@ export const LoginModal = ({ isOpen, onClose }) => {
                         Apple
                       </div>
 
-                      <div className="relative w-11 h-11 mt-6">
+                      <div className="auth-icon relative w-11 h-11 mt-6">
                         <AppleLogo size={44} color="white" weight="fill" />
                       </div>
                     </button>
@@ -401,7 +414,7 @@ export const LoginModal = ({ isOpen, onClose }) => {
                         Email
                       </div>
 
-                      <div className="relative w-11 h-11 mt-6">
+                      <div className="auth-icon relative w-11 h-11 mt-10">
                         <EnvelopeSimple size={44} color="white" weight="fill" />
                       </div>
                     </button>

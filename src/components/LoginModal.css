@@ -75,6 +75,11 @@
   .auth-button {
     min-height: 100px;
   }
+  
+  /* Reduce icon spacing on mobile to keep all buttons same height */
+  .auth-button .auth-icon {
+    margin-top: 0.75rem !important; /* mt-3 - reduce from mt-6/mt-10 */
+  }
 }
 
 @media (max-width: 640px) {

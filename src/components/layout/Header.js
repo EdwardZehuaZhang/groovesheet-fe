@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import './Header.css';
 import { LoginModal } from '../LoginModal';
-import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import AccountIcon from '../AccountIcon';
 
 function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -103,14 +104,7 @@ function Header() {
             </SignedOut>
             <SignedIn>
               <div className="desktop-only">
-                <UserButton
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: 'w-10 h-10',
-                    },
-                  }}
-                />
+                <AccountIcon />
               </div>
             </SignedIn>
 
@@ -188,7 +182,7 @@ function Header() {
                     className="mobile-nav-item"
                     style={{ display: 'flex', justifyContent: 'center' }}
                   >
-                    <UserButton afterSignOutUrl="/" />
+                    <AccountIcon />
                   </div>
                 </SignedIn>
               </div>
