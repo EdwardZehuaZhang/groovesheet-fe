@@ -86,8 +86,11 @@ function Hero({ onLoginRequired }) {
       setJobId(data.job_id);
       setStatus(data.status);
       
-      // Start polling for status
-      pollStatus(data.job_id);
+      // Give backend a moment to save job data before polling
+      // This helps avoid race conditions with Cloud Run scaling
+      setTimeout(() => {
+        pollStatus(data.job_id);
+      }, 1000); // Wait 1 second before starting to poll
     } catch (err) {
       console.error('Upload error:', err);
       
@@ -105,7 +108,9 @@ function Hero({ onLoginRequired }) {
   const pollStatus = async (id) => {
     console.log('Starting to poll status for job:', id);
     let pollCount = 0;
+    let consecutive404s = 0;
     const maxPolls = 60; // Maximum 3 minutes of polling
+    const max404s = 5; // Allow up to 5 consecutive 404s (backend might be cold-starting)
     
     const pollInterval = setInterval(async () => {
       pollCount++;
@@ -120,6 +125,28 @@ function Hero({ onLoginRequired }) {
           credentials: 'omit'
         });
         console.log('Status response:', response.status, response.statusText);
+        
+        // Handle 404 - backend might be cold-starting or job lost
+        if (response.status === 404) {
+          consecutive404s++;
+          console.warn(`Job not found (404) - attempt ${consecutive404s}/${max404s}`);
+          
+          if (consecutive404s >= max404s) {
+            clearInterval(pollInterval);
+            const errorText = await response.text();
+            console.error('Job permanently not found. Response:', errorText);
+            setError('Job not found. The backend may have restarted. Please try uploading again.');
+            return;
+          }
+          
+          // Don't throw error yet, continue polling
+          setStatus('pending');
+          setProgress(0);
+          return;
+        }
+        
+        // Reset 404 counter on successful response
+        consecutive404s = 0;
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -153,7 +180,6 @@ function Hero({ onLoginRequired }) {
           setError('Processing is taking too long. Please check back later or try again.');
         }
       } catch (err) {
-        clearInterval(pollInterval);
         console.error('Status check error:', err);
         console.error('Error details:', {
           message: err.message,
@@ -163,8 +189,19 @@ function Hero({ onLoginRequired }) {
         
         // Check if it's a CORS or network error
         if (err.message.includes('fetch') || err.name === 'TypeError') {
-          setError('Unable to connect to server. This may be a CORS issue. Please check browser console.');
+          // This might be a temporary network issue or backend cold start
+          console.warn('Network error, will retry...');
+          consecutive404s++;
+          
+          if (consecutive404s >= max404s) {
+            clearInterval(pollInterval);
+            setError('Unable to connect to server. The backend may be restarting. Please try again in a moment.');
+          }
+          // Continue polling
+          return;
         } else {
+          // Other errors - stop polling
+          clearInterval(pollInterval);
           setError(`Failed to check processing status: ${err.message}. Please refresh and try again.`);
         }
       }
