@@ -56,7 +56,7 @@
 
 .pricing-tabs {
   display: flex;
-  border-bottom: 2px solid #3D3B3E;
+  border-bottom: 2px solid #3d3b3e;
   position: relative;
 }
 
@@ -65,7 +65,7 @@
   padding: 0 46px 4px 46px;
   background: none;
   border: none;
-  color: #8D8C8D;
+  color: #8d8c8d;
   font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 24px;
   font-weight: 400;
@@ -75,16 +75,16 @@
 }
 
 .pricing-tab.active {
-  color: #F4F4F4;
+  color: #f4f4f4;
 }
-
 .pricing-tab-indicator {
   position: absolute;
   bottom: -2px;
   left: 0;
-  width: 151px;
+  /* span half the tabs container (works well when there are two equally sized tabs) */
+  width: 50%;
   height: 2px;
-  background: #F4F4F4;
+  background: #f4f4f4;
   transition: left 0.3s ease;
 }
 
@@ -98,7 +98,7 @@
   gap: 4px;
   padding: 5px;
   border-radius: 12px;
-  border: 1px solid #3D3B3E;
+  border: 1px solid #3d3b3e;
   background: #323033;
   position: relative;
 }
@@ -107,7 +107,7 @@
   padding: 8px 12px;
   background: none;
   border: none;
-  color: #8D8C8D;
+  color: #8d8c8d;
   font-family: 'Hubot Sans', -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 400;
@@ -120,7 +120,7 @@
 }
 
 .toggle-option.active {
-  color: #F4F4F4;
+  color: #f4f4f4;
 }
 
 .toggle-option.active::before {
@@ -130,13 +130,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #5F5E60;
+  background: #5f5e60;
   border-radius: 8px;
   z-index: -1;
 }
 
 .toggle-option .highlight {
-  color: #012FA7;
+  color: #012fa7;
 }
 
 .pricing-cards {
@@ -156,7 +156,7 @@
 .pricing-card.featured {
   padding: 11px 4px 4px 4px;
   border-radius: 16px;
-  background: #012FA7;
+  background: #012fa7;
   position: relative;
 }
 
@@ -184,7 +184,7 @@
   gap: 8px;
   padding: 24px;
   border-radius: 0 0 24px 24px;
-  background: #3D3B3E;
+  background: #3d3b3e;
 }
 
 .pricing-card-name {
@@ -250,27 +250,61 @@
   border: none;
 }
 
+/* Remove default browser focus outline (black) for these buttons. Replace with custom focus styles if accessibility
+   requires a visible focus state (e.g. box-shadow or border color). */
+.pricing-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .pricing-btn.outline {
-  background: #F4F4F4;
-  color: #1B191C;
+  background: #f4f4f4;
+  color: #1b191c;
+  /* ensure no visible border/edge */
+  border: 1px solid transparent;
+  box-shadow: none;
 }
 
 .pricing-btn.outline:hover {
-  background: #E8E8E8;
+  background: #e8e8e8;
 }
 
 .pricing-btn.primary {
-  background: #012FA7;
+  background: #012fa7;
   color: #fff;
 }
 
 .pricing-btn.primary:hover {
-  background: #0138C0;
+  background: #0138c0;
 }
 
 .pricing-btn svg {
   width: 14px;
   height: 14px;
+}
+
+/* Remove any browser default edges/appearance for these buttons */
+.pricing-btn,
+.pricing-btn.outline,
+.pricing-btn.primary {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Ensure focus/active states don't show a black outline; keep accessible focus styling if you want to add one later */
+.pricing-btn:focus,
+.pricing-btn:active,
+.pricing-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* Firefox inner focus fix */
+.pricing-btn::-moz-focus-inner {
+  border: 0;
 }
 
 .pricing-card-body {
@@ -358,6 +392,27 @@
   .toggle-option {
     flex: 1;
     text-align: center;
+  }
+
+  /* Stronger rules to remove any visible edge/outline around the outline buttons */
+  .pricing-btn.outline {
+    border: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+    background-clip: padding-box;
+  }
+
+  .pricing-btn.outline svg {
+    /* ensure SVG doesn't add any stroke outside bounds */
+    display: block;
+  }
+
+  .pricing-btn.outline:focus,
+  .pricing-btn.outline:active,
+  .pricing-btn.outline:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   .plan-name {

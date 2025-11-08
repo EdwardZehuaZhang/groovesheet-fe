@@ -2,11 +2,6 @@ import React from 'react';
 import { UserButton } from '@clerk/clerk-react';
 import { User } from '@phosphor-icons/react';
 
-// Lightweight Component17 stub used by original design (keeps compatibility)
-const Component17 = ({ className }) => (
-  <div className={className} style={{ width: 24, height: 24 }} aria-hidden />
-);
-
 export const AccountIcon = ({ compact = false }) => {
   // compact: render minimal markup for mobile menu so it looks like other links
   if (compact) {
@@ -39,8 +34,6 @@ export const AccountIcon = ({ compact = false }) => {
 
   return (
     <div className="account-button inline-flex items-center justify-end gap-6 relative">
-      <Component17 className="!flex-[0_0_auto] !left-[unset] !top-[unset]" />
-
       <div className="inline-flex items-center gap-2 relative flex-[0_0_auto]">
         <div
           className="flex items-center justify-center account-icon"

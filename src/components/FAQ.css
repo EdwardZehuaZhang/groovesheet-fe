@@ -21,7 +21,7 @@
   font-size: 40px;
   font-weight: 400;
   line-height: 44px;
-  color: #F4F4F4;
+  color: #f4f4f4;
   text-align: center;
   margin: 0;
 }
@@ -61,7 +61,7 @@
   font-size: 24px;
   font-weight: 400;
   line-height: 32px;
-  color: #F4F4F4;
+  color: #f4f4f4;
   margin: 0;
 }
 
@@ -99,7 +99,7 @@
   font-size: 24px;
   font-weight: 400;
   line-height: 32px;
-  color: #F4F4F4;
+  color: #f4f4f4;
 }
 
 .faq-icon {
@@ -112,25 +112,53 @@
 .faq-icon-line {
   width: 17px;
   height: 2px;
-  background: #F4F4F4;
+  background: #f4f4f4;
   position: absolute;
   top: 50%;
   left: 50%;
   transition: transform 0.3s ease;
 }
 
+/* make the two lines form a downward chevron by default */
 .faq-icon-line.line-1 {
-  transform: translate(-50%, -50%) rotate(-45deg);
+  transform: translate(-50%, -60%) rotate(45deg);
   transform-origin: center;
 }
 
 .faq-icon-line.line-2 {
-  transform: translate(-50%, -50%) rotate(45deg);
+  transform: translate(-50%, -60%) rotate(-45deg);
   transform-origin: center;
 }
 
+.faq-icon {
+  transition: transform 0.3s ease;
+}
+
+/* when the question is open, rotate the icon 180deg to point upward */
+.faq-question-row.open .faq-icon {
+  transform: rotate(180deg);
+}
+
+/* answer area */
+.faq-answer {
+  color: #bbbabb;
+  /* start closed with no padding so it does not take up space */
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.25s ease;
+}
+
+.faq-question-row.open .faq-answer {
+  /* when open, allow space and show content */
+  max-height: 400px;
+  opacity: 1;
+  padding: 12px 0 24px 0;
+}
+
 .faq-question-button:hover .faq-question-text span {
-  color: #BBBABB;
+  color: #bbbabb;
 }
 
 @media (max-width: 1024px) {
