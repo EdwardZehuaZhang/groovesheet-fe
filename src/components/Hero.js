@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import './Hero.css';
 
-const API_BASE_URL = 'https://groovesheet-be-700212390421.asia-southeast1.run.app/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
 
 function Hero({ onLoginRequired }) {
   const { isSignedIn, isLoaded } = useUser();
@@ -58,7 +58,7 @@ function Hero({ onLoginRequired }) {
     }
 
     const formData = new FormData();
-    formData.append('audio_file', fileToUpload);
+    formData.append('file', fileToUpload);  // Changed from 'audio_file' to 'file'
 
     setError(null);
     setStatus('uploading');
@@ -68,9 +68,11 @@ function Hero({ onLoginRequired }) {
       console.log('Uploading file to:', `${API_BASE_URL}/transcribe`);
       const response = await fetch(`${API_BASE_URL}/transcribe`, {
         method: 'POST',
+        headers: {
+          'Authorization': 'Bearer dummy-token-for-testing'  // Add authorization header
+        },
         body: formData,
-        mode: 'cors', // Explicitly set CORS mode
-        credentials: 'omit' // Don't send credentials for now
+        mode: 'cors'
       });
 
       console.log('Upload response status:', response.status);
