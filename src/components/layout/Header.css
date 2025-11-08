@@ -263,6 +263,35 @@
     font-size: 16px;
     padding: 10px 18px;
   }
+
+  /* When the account button is rendered in the mobile menu, hide the avatar/icon
+     and make the label match other mobile items (left-aligned and same font-size). */
+  /* If AccountIcon renders the compact variant, make it fill the row and look like other links. */
+  .mobile-nav-item .account-button.compact {
+    display: block;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+  }
+
+  .mobile-nav-item .account-button.compact .account-label {
+    font-size: 16px;
+    color: #cfd3d6;
+    text-align: left;
+    line-height: 32px;
+  }
+
+  /* Ensure the compact account label inherits the surrounding mobile-nav-item sizing
+     so it matches other rows like the Blog link at all breakpoints. */
+  .mobile-nav-item .account-button.compact .account-label {
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  /* Fallback: hide the legacy icon wrapper if it exists */
+  .mobile-nav-item .account-icon {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {

@@ -171,11 +171,9 @@ function Header({ onLoginClick }) {
                   </button>
                 </SignedOut>
                 <SignedIn>
-                  <div
-                    className="mobile-nav-item"
-                    style={{ display: 'flex', justifyContent: 'center' }}
-                  >
-                    <AccountIcon />
+                  <div className="mobile-nav-item" style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                    {/* Use compact AccountIcon to render a simple label (keeps Clerk overlay) */}
+                    <AccountIcon compact />
                   </div>
                 </SignedIn>
               </div>
