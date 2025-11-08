@@ -10,7 +10,7 @@ module.exports = {
   extends: ['react-app', 'react-app/jest'],
   rules: {
     // Customize your rules here
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'no-console': 'off', // Allow console statements
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     'react/prop-types': 'off', // Turn off if not using PropTypes
   },
