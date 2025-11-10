@@ -108,111 +108,77 @@ function Hero({ onLoginRequired }) {
 
   // Poll job status
   const pollStatus = async (id) => {
-    console.log('Starting to poll status for job:', id);
-    let pollCount = 0;
+    console.log('Starting resilient polling for job:', id);
+    let attempts = 0;
     let consecutive404s = 0;
-    const maxPolls = 60; // Maximum 3 minutes of polling
-    const max404s = 5; // Allow up to 5 consecutive 404s (backend might be cold-starting)
-    
-    const pollInterval = setInterval(async () => {
-      pollCount++;
-      console.log(`Poll attempt ${pollCount} for job ${id}`);
-      
+    let intervalMs = 3000; // start at 3s
+    const max404s = 8; // tolerate more 404s (cold starts & eventual consistency)
+    let stopped = false;
+
+    const poll = async () => {
+      if (stopped) return;
+      attempts++;
+      console.log(`Poll attempt ${attempts} (interval=${intervalMs}ms)`);
       try {
-        const statusUrl = `${API_BASE_URL}/status/${id}`;
-        console.log('Fetching status from:', statusUrl);
-        
-        const response = await fetch(statusUrl, {
-          mode: 'cors',
-          credentials: 'omit'
-        });
-        console.log('Status response:', response.status, response.statusText);
-        
-        // Handle 404 - backend might be cold-starting or job lost
+        const response = await fetch(`${API_BASE_URL}/status/${id}`, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
         if (response.status === 404) {
           consecutive404s++;
-          console.warn(`Job not found (404) - attempt ${consecutive404s}/${max404s}`);
-          
+          console.warn(`404 (job not yet visible) ${consecutive404s}/${max404s}`);
           if (consecutive404s >= max404s) {
-            clearInterval(pollInterval);
-            const errorText = await response.text();
-            console.error('Job permanently not found. Response:', errorText);
-            setError('Job not found. The backend may have restarted. Please try uploading again.');
+            setError('Job not found after repeated attempts. Please re-upload.');
+            stopped = true;
             return;
           }
-          
-          // Don't throw error yet, continue polling
           setStatus('pending');
           setProgress(0);
-          return;
-        }
-        
-        // Reset 404 counter on successful response
-        consecutive404s = 0;
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Status check failed. Response:', errorText);
-          throw new Error(`Status check failed: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Status data:', data);
-        
-        setStatus(data.status);
-        setProgress(data.progress || 0);
-
-        if (data.status === 'completed') {
-          console.log('Job completed! Downloading MusicXML...');
-          clearInterval(pollInterval);
-          // Auto-download MusicXML
-          downloadMusicXML(id);
-          
-          // Reset after 3 seconds
-          setTimeout(() => {
-            resetUpload();
-          }, 3000);
-        } else if (data.status === 'failed') {
-          console.error('Job failed:', data.message);
-          clearInterval(pollInterval);
-          setError(data.message || 'Processing failed. Please try again.');
-        } else if (pollCount >= maxPolls) {
-          console.error('Polling timeout reached');
-          clearInterval(pollInterval);
-          setError('Processing is taking too long. Please check back later or try again.');
+        } else if (!response.ok) {
+          const txt = await response.text();
+            throw new Error(`Status check failed ${response.status}: ${txt}`);
+        } else {
+          consecutive404s = 0;
+          const data = await response.json();
+          console.log('Status data:', data);
+          setStatus(data.status);
+          setProgress(data.progress || 0);
+          // Optional granular message from backend
+          if (data.last_progress_message) {
+            console.log('Progress message:', data.last_progress_message);
+          }
+          if (data.status === 'completed') {
+            console.log('Job completed, initiating download');
+            downloadMusicXML(id);
+            stopped = true;
+            setTimeout(resetUpload, 4000);
+            return;
+          } else if (data.status === 'failed') {
+            setError(data.message || 'Processing failed.');
+            stopped = true;
+            return;
+          }
         }
       } catch (err) {
-        console.error('Status check error:', err);
-        console.error('Error details:', {
-          message: err.message,
-          stack: err.stack,
-          name: err.name
-        });
-        
-        // Check if it's a CORS or network error
-        if (err.message.includes('fetch') || err.name === 'TypeError') {
-          // This might be a temporary network issue or backend cold start
-          console.warn('Network error, will retry...');
-          consecutive404s++;
-          
-          if (consecutive404s >= max404s) {
-            clearInterval(pollInterval);
-            setError('Unable to connect to server. The backend may be restarting. Please try again in a moment.');
-          }
-          // Continue polling
-          return;
+        console.error('Polling error:', err);
+        if (err.name === 'TypeError') {
+          // Network glitch; continue
+          console.warn('Network issue, will retry');
         } else {
-          // Other errors - stop polling
-          clearInterval(pollInterval);
-          setError(`Failed to check processing status: ${err.message}. Please refresh and try again.`);
+          setError(`Status error: ${err.message}`);
+        }
+      } finally {
+        // Exponential backoff up to 20s once progress > 60 to reduce load
+        if (!stopped) {
+          if (progress >= 60 && intervalMs < 20000) intervalMs = Math.min(intervalMs * 2, 20000);
+          setTimeout(poll, intervalMs);
         }
       }
-    }, 3000); // Poll every 3 seconds
+    };
+    poll();
   };
 
   // Download MusicXML file
   const downloadMusicXML = (id) => {
-    const url = `${API_BASE_URL}/download/${id}/musicxml`;
+    // New endpoint path (backend uses /download/{job_id})
+    const url = `${API_BASE_URL}/download/${id}`;
     const a = document.createElement('a');
     a.href = url;
     a.download = `drum_sheet_${id}.musicxml`;
@@ -277,13 +243,15 @@ function Hero({ onLoginRequired }) {
       case 'uploading':
         return 'Uploading file...';
       case 'pending':
-        return 'Processing queued...';
+        return 'Job queued...';
       case 'separating':
         return 'Separating drum track...';
       case 'transcribing':
         return 'Transcribing drums to notation...';
       case 'generating_sheet':
         return 'Generating sheet music...';
+      case 'processing':
+        return `Processing... ${progress}%`;
       case 'completed':
         return '✓ Download started! Processing complete.';
       case 'failed':
