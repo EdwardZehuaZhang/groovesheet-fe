@@ -87,7 +87,7 @@
    small (used for language -> account tightening) while giving the login action
    its own breathing room. */
 .header-right .login-btn {
-  margin-right: 40px;
+  margin-right: 0px;
 }
 
 .language-selector {
@@ -139,7 +139,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0 0 18px;
+  padding: 0;
   min-width: 80px;
   color: #cfd3d6;
   font-size: 24px;
@@ -167,6 +167,7 @@
   border: none;
   cursor: pointer;
   padding: 0;
+  margin-left: 20px;
   z-index: 101;
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Header from './components/layout/Header';
 import Hero from './components/Hero';
@@ -9,6 +10,27 @@ import ComparePlans from './components/ComparePlans';
 import FAQ from './components/FAQ';
 import Footer from './components/layout/Footer';
 import { LoginModal } from './components/LoginModal';
+import TranscriptionHistory from './components/TranscriptionHistory';
+
+function LandingPage({ onLoginClick }) {
+  return (
+    <div className="app-container">
+      <div className="dot-grid"></div>
+      <div
+        className="hero-background"
+        style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/images/Hero_Background.png)` }}
+      ></div>
+      <Header onLoginClick={onLoginClick} />
+      <Hero onLoginRequired={onLoginClick} />
+      <Features />
+      <Pricing />
+      <Testimonials />
+      <ComparePlans />
+      <FAQ />
+      <Footer />
+    </div>
+  );
+}
 
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -24,22 +46,13 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <div className="dot-grid"></div>
-      <div
-        className="hero-background"
-        style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/images/Hero_Background.png)` }}
-      ></div>
-      <Header onLoginClick={openLoginModal} />
-      <Hero onLoginRequired={openLoginModal} />
-      <Features />
-      <Pricing />
-      <Testimonials />
-      <ComparePlans />
-      <FAQ />
-      <Footer />
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage onLoginClick={openLoginModal} />} />
+        <Route path="/history" element={<TranscriptionHistory />} />
+      </Routes>
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
-    </div>
+    </Router>
   );
 }
 

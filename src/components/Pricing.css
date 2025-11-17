@@ -183,7 +183,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 24px;
-  border-radius: 0 0 24px 24px;
+  border-radius: 16px 16px 16px 16px;
   background: #3d3b3e;
 }
 
@@ -261,8 +261,9 @@
   background: #f4f4f4;
   color: #1b191c;
   /* ensure no visible border/edge */
-  border: 1px solid transparent;
-  box-shadow: none;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .pricing-btn.outline:hover {
