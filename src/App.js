@@ -11,6 +11,7 @@ import FAQ from './components/FAQ';
 import Footer from './components/layout/Footer';
 import { LoginModal } from './components/LoginModal';
 import TranscriptionHistory from './components/TranscriptionHistory';
+import SSOCallback from './components/SSOCallback';
 
 function LandingPage({ onLoginClick }) {
   return (
@@ -50,6 +51,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage onLoginClick={openLoginModal} />} />
         <Route path="/history" element={<TranscriptionHistory />} />
+        <Route path="/sso-callback" element={<SSOCallback />} />
       </Routes>
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </Router>
