@@ -1,8 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import { CheckCircle } from '@phosphor-icons/react';
+import confetti from 'canvas-confetti';
 import './Hero.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
+// Base URL for the new Orchestrator backend
+// In development, we use /api which is proxied to the actual backend
+// In production, this will be the full URL
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? (process.env.REACT_APP_API_URL || 'https://api-orchestrator-test-700212390421.asia-southeast1.run.app')
+  : '/api';
 
 function Hero({ onLoginRequired }) {
   const { isSignedIn, isLoaded } = useUser();
@@ -14,7 +21,43 @@ function Hero({ onLoginRequired }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState(null);
+  const [downloadFilename, setDownloadFilename] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Trigger confetti when download completes
+  useEffect(() => {
+    if ((status === 'completed' || status === 'succeeded' || status === 'success') && downloadFilename) {
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        });
+      }, 250);
+
+      return () => clearInterval(interval);
+    }
+  }, [status, downloadFilename]);
 
   // Handle file selection
   const handleFileChange = (selectedFile) => {
@@ -41,7 +84,7 @@ function Hero({ onLoginRequired }) {
     handleUpload(selectedFile);
   };
 
-  // Handle upload
+  // Handle upload -> start demucs_separate workflow
   const handleUpload = async (fileToUpload) => {
     // Check if user is logged in
     if (!isLoaded) {
@@ -65,14 +108,9 @@ function Hero({ onLoginRequired }) {
     setProgress(0);
 
     try {
-      console.log('Uploading file to:', `${API_BASE_URL}/transcribe`);
-      const response = await fetch(`${API_BASE_URL}/transcribe`, {
+      const response = await fetch(`${API_BASE_URL}/workflow/demucs_separate`, {
         method: 'POST',
-        headers: {
-          'Authorization': 'Bearer dummy-token-for-testing'  // Add authorization header
-        },
-        body: formData,
-        mode: 'cors'
+        body: formData
       });
 
       console.log('Upload response status:', response.status);
@@ -84,15 +122,19 @@ function Hero({ onLoginRequired }) {
       }
 
       const data = await response.json();
-      console.log('Upload successful. Job data:', data);
-      setJobId(data.job_id);
-      setStatus(data.status);
+      console.log('Workflow started:', data);
+      const workflowId = data.workflow_id || data.job_id; // fallback if backend returns job_id
+      if (!workflowId) {
+        throw new Error('No workflow_id returned from server');
+      }
+      setJobId(workflowId);
+      setStatus(data.status || 'pending');
       
       // Give backend a moment to save job data before polling
       // This helps avoid race conditions with Cloud Run scaling
       setTimeout(() => {
-        pollStatus(data.job_id);
-      }, 1000); // Wait 1 second before starting to poll
+        pollStatus(workflowId);
+      }, 1000);
     } catch (err) {
       console.error('Upload error:', err);
       
@@ -106,7 +148,7 @@ function Hero({ onLoginRequired }) {
     }
   };
 
-  // Poll job status
+  // Poll workflow status
   const pollStatus = async (id) => {
     console.log('Starting resilient polling for job:', id);
     let attempts = 0;
@@ -120,7 +162,7 @@ function Hero({ onLoginRequired }) {
       attempts++;
       console.log(`Poll attempt ${attempts} (interval=${intervalMs}ms)`);
       try {
-        const response = await fetch(`${API_BASE_URL}/status/${id}`, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
+        const response = await fetch(`${API_BASE_URL}/workflow/status/${id}`, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
         if (response.status === 404) {
           consecutive404s++;
           console.warn(`404 (job not yet visible) ${consecutive404s}/${max404s}`);
@@ -138,19 +180,25 @@ function Hero({ onLoginRequired }) {
           consecutive404s = 0;
           const data = await response.json();
           console.log('Status data:', data);
-          setStatus(data.status);
+          const newStatus = data.status || data.state || 'processing';
+          setStatus(newStatus);
           setProgress(data.progress || 0);
           // Optional granular message from backend
           if (data.last_progress_message) {
             console.log('Progress message:', data.last_progress_message);
           }
-          if (data.status === 'completed') {
-            console.log('Job completed, initiating download');
-            downloadMusicXML(id);
+          if (newStatus === 'completed' || newStatus === 'succeeded' || newStatus === 'success') {
+            console.log('Workflow completed, downloading drums output');
+            setStatus('completed'); // Ensure status is set
             stopped = true;
-            setTimeout(resetUpload, 4000);
+            try {
+              await downloadDrumFile(id);
+            } catch (err) {
+              console.error('Download error:', err);
+              setError(`Download failed: ${err.message}`);
+            }
             return;
-          } else if (data.status === 'failed') {
+          } else if (newStatus === 'failed' || newStatus === 'error') {
             setError(data.message || 'Processing failed.');
             stopped = true;
             return;
@@ -175,13 +223,37 @@ function Hero({ onLoginRequired }) {
     poll();
   };
 
-  // Download MusicXML file
-  const downloadMusicXML = (id) => {
-    // New endpoint path (backend uses /download/{job_id})
-    const url = `${API_BASE_URL}/download/${id}`;
+  // Download drums file from the workflow outputs
+  const downloadDrumFile = async (id) => {
+    const url = `${API_BASE_URL}/workflow/download/${id}/drums`;
+    console.log('Fetching from:', url);
+    const res = await fetch(url);
+    console.log('Download response:', res.status, res.statusText);
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      console.error('Download failed response:', txt);
+      throw new Error(`Download failed ${res.status}: ${txt}`);
+    }
+    const blob = await res.blob();
+    console.log('Blob received:', blob.size, 'bytes');
+    // Try to get filename from Content-Disposition header
+    const cd = res.headers.get('content-disposition') || '';
+    let filename = file?.name ? file.name.replace(/\.[^.]+$/, '_drums.wav') : `drums_${id}.wav`;
+    const match = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    if (match) {
+      filename = decodeURIComponent(match[1] || match[2]);
+    }
+    console.log('Download filename:', filename);
+    
+    // Store for manual download
+    const objectUrl = URL.createObjectURL(blob);
+    setDownloadUrl(objectUrl);
+    setDownloadFilename(filename);
+    
+    // Auto-download
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `drum_sheet_${id}.musicxml`;
+    a.href = objectUrl;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -189,13 +261,30 @@ function Hero({ onLoginRequired }) {
 
   // Reset upload state
   const resetUpload = () => {
+    if (downloadUrl) {
+      URL.revokeObjectURL(downloadUrl);
+    }
     setFile(null);
     setJobId(null);
     setStatus(null);
     setProgress(0);
     setError(null);
+    setDownloadUrl(null);
+    setDownloadFilename(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  // Manual download handler
+  const handleManualDownload = () => {
+    if (downloadUrl && downloadFilename) {
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = downloadFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   };
 
@@ -244,6 +333,10 @@ function Hero({ onLoginRequired }) {
         return 'Uploading file...';
       case 'pending':
         return 'Job queued...';
+      case 'queued':
+        return 'Job queued...';
+      case 'running':
+        return `Processing... ${progress}%`;
       case 'separating':
         return 'Separating drum track...';
       case 'transcribing':
@@ -253,6 +346,8 @@ function Hero({ onLoginRequired }) {
       case 'processing':
         return `Processing... ${progress}%`;
       case 'completed':
+      case 'succeeded':
+      case 'success':
         return '✓ Download started! Processing complete.';
       case 'failed':
         return 'Processing failed. Please try again.';
@@ -277,7 +372,7 @@ function Hero({ onLoginRequired }) {
           </div>
         </div>
         <div 
-          className={`upload-area ${isDragging ? 'dragging' : ''} ${status ? 'processing' : ''}`}
+          className={`upload-area ${isDragging ? 'dragging' : ''} ${status ? 'processing' : ''} ${status === 'completed' || status === 'succeeded' || status === 'success' ? 'completed' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -291,6 +386,32 @@ function Hero({ onLoginRequired }) {
             style={{ display: 'none' }}
           />
 
+          {/* Success State */}
+          {(status === 'completed' || status === 'succeeded' || status === 'success') && downloadFilename ? (
+            <>
+              <button className="close-btn" onClick={resetUpload} aria-label="Close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <div className="upload-content">
+                <div className="upload-icon">
+                  <CheckCircle size={64} weight="fill" color="#22c55e" />
+                </div>
+                <div className="upload-text">
+                  <h3>Processing Complete!</h3>
+                  <p>{file?.name}</p>
+                </div>
+              </div>
+              <button className="browse-btn" onClick={handleManualDownload}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 3V16M12 16L16 12M12 16L8 12M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Download Drums Track</span>
+              </button>
+            </>
+          ) : (
+          <>
           <div className="upload-content">
             <div className="upload-icon">
               <svg width="64" height="65" viewBox="0 0 64 65" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -311,7 +432,7 @@ function Hero({ onLoginRequired }) {
           </div>
 
           {/* Status and Progress */}
-          {(status || error) && (
+          {(status || error) && status !== 'completed' && status !== 'succeeded' && status !== 'success' && (
             <div className="upload-status">
               <p className={error ? 'error' : 'status-message'}>
                 {getStatusMessage()}
@@ -336,6 +457,8 @@ function Hero({ onLoginRequired }) {
               ? 'Processing...' 
               : 'Browse Files'}
           </button>
+          </>
+          )}
         </div>
       </div>
     </section>
