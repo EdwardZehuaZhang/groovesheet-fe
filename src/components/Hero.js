@@ -5,11 +5,8 @@ import confetti from 'canvas-confetti';
 import './Hero.css';
 
 // Base URL for the new Orchestrator backend
-// In development, we use /api which is proxied to the actual backend
-// In production, this will be the full URL
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? (process.env.REACT_APP_API_URL || 'https://api-orchestrator-test-700212390421.asia-southeast1.run.app')
-  : '/api';
+// Use /api in both dev and production - Vercel rewrites handle the proxy
+const API_BASE_URL = '/api';
 
 function Hero({ onLoginRequired }) {
   const { isSignedIn, isLoaded } = useUser();
