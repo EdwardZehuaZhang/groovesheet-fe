@@ -186,15 +186,16 @@ function Hero({ onLoginRequired }) {
           }
           if (newStatus === 'completed' || newStatus === 'succeeded' || newStatus === 'success') {
             console.log('Workflow completed, downloading drums output');
-            setStatus('completed'); // Set UI to completed state immediately
             stopped = true;
-            // Download in background without blocking UI update
-            setTimeout(() => {
-              downloadDrumFile(id).catch(err => {
-                console.error('Download error:', err);
-                setError(`Download failed: ${err.message}`);
-              });
-            }, 0);
+            // Download first, then update UI to completed state
+            try {
+              await downloadDrumFile(id);
+              // Only set to completed after successful download
+              setStatus('completed');
+            } catch (err) {
+              console.error('Download error:', err);
+              setError(`Download failed: ${err.message}`);
+            }
             return;
           } else if (newStatus === 'failed' || newStatus === 'error') {
             setError(data.message || 'Processing failed.');
