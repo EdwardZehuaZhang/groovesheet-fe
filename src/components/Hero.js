@@ -178,8 +178,6 @@ function Hero({ onLoginRequired }) {
           const data = await response.json();
           console.log('Status data:', data);
           const newStatus = data.status || data.state || 'processing';
-          setStatus(newStatus);
-          setProgress(data.progress || 0);
           // Optional granular message from backend
           if (data.last_progress_message) {
             console.log('Progress message:', data.last_progress_message);
@@ -187,10 +185,12 @@ function Hero({ onLoginRequired }) {
           if (newStatus === 'completed' || newStatus === 'succeeded' || newStatus === 'success') {
             console.log('Workflow completed, downloading drums output');
             stopped = true;
-            // Download first, then update UI to completed state
+            // Download first, then batch all state updates together
             try {
-              await downloadDrumFile(id);
-              // Only set to completed after successful download
+              const { objectUrl, filename } = await downloadDrumFile(id);
+              // Batch state updates - React will batch these together in one render
+              setDownloadUrl(objectUrl);
+              setDownloadFilename(filename);
               setStatus('completed');
             } catch (err) {
               console.error('Download error:', err);
@@ -202,6 +202,9 @@ function Hero({ onLoginRequired }) {
             stopped = true;
             return;
           }
+          // Only update status and progress if not completed (completed is set after download)
+          setStatus(newStatus);
+          setProgress(data.progress || 0);
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -246,8 +249,6 @@ function Hero({ onLoginRequired }) {
     
     // Store for manual download
     const objectUrl = URL.createObjectURL(blob);
-    setDownloadUrl(objectUrl);
-    setDownloadFilename(filename);
     
     // Auto-download
     const a = document.createElement('a');
@@ -256,6 +257,9 @@ function Hero({ onLoginRequired }) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    
+    // Return the data to set state in parent
+    return { objectUrl, filename };
   };
 
   // Reset upload state
