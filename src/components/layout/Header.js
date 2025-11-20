@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { Link } from 'react-router-dom';
 import './Header.css';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import AccountIcon from '../AccountIcon';
@@ -44,9 +45,9 @@ function Header({ onLoginClick }) {
         {/* Inner constrained content to align with main page sections (e.g. Pricing) */}
         <div className="header-inner">
           <div className="header-left">
-            <div className="logo">
+            <Link to="/" className="logo">
               <img src="/images/Logo_White.png" alt="DrumScore Logo" className="logo-image" />
-            </div>
+            </Link>
             <nav className="nav-menu">
               <div className="nav-item dropdown">
                 <span>Pricing</span>
@@ -69,9 +70,9 @@ function Header({ onLoginClick }) {
               <a href="#about" className="nav-item">
                 About
               </a>
-              <a href="#blog" className="nav-item">
+              <Link to="/blog" className="nav-item">
                 Blog
-              </a>
+              </Link>
             </nav>
           </div>
           <div className="header-right">
@@ -146,9 +147,9 @@ function Header({ onLoginClick }) {
                 <a href="#about" className="mobile-nav-item" onClick={closeMobileMenu}>
                   About
                 </a>
-                <a href="#blog" className="mobile-nav-item" onClick={closeMobileMenu}>
+                <Link to="/blog" className="mobile-nav-item" onClick={closeMobileMenu}>
                   Blog
-                </a>
+                </Link>
                 <div className="mobile-menu-divider"></div>
                 <div className="mobile-nav-item">
                   <span>En</span>

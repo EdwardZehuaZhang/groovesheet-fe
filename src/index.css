@@ -36,3 +36,14 @@ body::-webkit-scrollbar {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* Minimal variables used by the new section */
+:root {
+  --gradient: rgba(240, 84, 84, 1);
+}
+
+@layer components {
+  .all-\[unset\] {
+    all: unset;
+  }
+}
