@@ -11,6 +11,11 @@ module.exports = function(app) {
       },
       onProxyReq: function(proxyReq, req, res) {
         console.log('Proxying:', req.method, req.path, '->', proxyReq.path);
+        // Forward Authorization header if present
+        if (req.headers.authorization) {
+          proxyReq.setHeader('Authorization', req.headers.authorization);
+          console.log('Forwarding Authorization header');
+        }
       },
       logLevel: 'debug',
     })

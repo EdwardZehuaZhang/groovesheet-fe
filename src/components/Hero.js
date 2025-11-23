@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { CheckCircle } from '@phosphor-icons/react';
 import confetti from 'canvas-confetti';
+import { authenticatedFetch } from '../utils/api';
 import './Hero.css';
 
 // Base URL for the new Orchestrator backend
@@ -10,6 +11,7 @@ const API_BASE_URL = '/api';
 
 function Hero({ onLoginRequired }) {
   const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   // eslint-disable-next-line no-unused-vars
   const [file, setFile] = useState(null);
   // eslint-disable-next-line no-unused-vars
@@ -105,10 +107,14 @@ function Hero({ onLoginRequired }) {
     setProgress(0);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/workflow/demucs_separate`, {
-        method: 'POST',
-        body: formData
-      });
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/workflow/demucs_separate`,
+        {
+          method: 'POST',
+          body: formData
+        },
+        getToken
+      );
 
       console.log('Upload response status:', response.status);
 
@@ -159,7 +165,11 @@ function Hero({ onLoginRequired }) {
       attempts++;
       console.log(`Poll attempt ${attempts} (interval=${intervalMs}ms)`);
       try {
-        const response = await fetch(`${API_BASE_URL}/workflow/status/${id}`, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/workflow/status/${id}`,
+          { mode: 'cors', credentials: 'omit', cache: 'no-store' },
+          getToken
+        );
         if (response.status === 404) {
           consecutive404s++;
           console.warn(`404 (job not yet visible) ${consecutive404s}/${max404s}`);
@@ -229,7 +239,7 @@ function Hero({ onLoginRequired }) {
   const downloadDrumFile = async (id) => {
     const url = `${API_BASE_URL}/workflow/download/${id}/drums`;
     console.log('Fetching from:', url);
-    const res = await fetch(url);
+    const res = await authenticatedFetch(url, {}, getToken);
     console.log('Download response:', res.status, res.statusText);
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
