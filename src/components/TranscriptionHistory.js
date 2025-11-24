@@ -1,14 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { ArrowLeft, MagnifyingGlass } from '@phosphor-icons/react';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
 import TranscriptionCard from './TranscriptionCard';
+import { fetchWorkflowList, fetchWorkflowStatus } from '../utils/api';
+import config from '../config';
 import './TranscriptionHistory.css';
 
 export const TranscriptionHistory = () => {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [workflows, setWorkflows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch workflows on component mount
+  useEffect(() => {
+    const loadWorkflows = async () => {
+      try {
+        setLoading(true);
+        
+        // Step 1: Get list of workflow IDs
+        const listData = await fetchWorkflowList(config.apiBaseUrl, getToken);
+        console.log('List data received:', listData);
+        
+        // Extract workflow IDs from the response
+        let workflowIds = [];
+        if (listData && Array.isArray(listData.workflow_ids)) {
+          workflowIds = listData.workflow_ids;
+          console.log('Extracted workflow IDs:', workflowIds);
+        } else if (Array.isArray(listData)) {
+          workflowIds = listData;
+          console.log('Data is already an array:', workflowIds);
+        } else {
+          console.warn('Unexpected data format:', listData);
+        }
+        
+        // Step 2: Fetch detailed status for each workflow ID
+        if (workflowIds.length > 0) {
+          console.log('Fetching detailed status for', workflowIds.length, 'workflows...');
+          const statusPromises = workflowIds.map(id => 
+            fetchWorkflowStatus(config.apiBaseUrl, id, getToken)
+              .catch(err => {
+                console.error(`Failed to fetch status for ${id}:`, err);
+                return null;
+              })
+          );
+          const statuses = await Promise.all(statusPromises);
+          const validStatuses = statuses.filter(s => s !== null);
+          console.log('Fetched statuses:', validStatuses);
+          setWorkflows(validStatuses);
+        } else {
+          console.log('No workflow IDs found');
+          setWorkflows([]);
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching workflows:', err);
+        setError(err.message);
+        setWorkflows([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWorkflows();
+  }, [getToken]);
 
   // Split filename into name and extension
   const getFileNameParts = (fullName) => {
@@ -22,59 +83,57 @@ export const TranscriptionHistory = () => {
     };
   };
 
-  // Mock data - replace with actual API call
-  const processingItems = [
-    {
-      id: 1,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock band.mp3',
-      progress: 7,
-      status: 'processing'
+  // Format date from ISO string
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  // Format time from ISO string
+  const formatTime = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  // Filter workflows by search query
+  const filteredWorkflows = Array.isArray(workflows) 
+    ? workflows.filter(workflow => {
+        const filename = workflow.filename || workflow.workflow_id || '';
+        return filename.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : [];
+
+  // Group workflows by status
+  const processingItems = filteredWorkflows.filter(w => 
+    w.status === 'processing' || w.status === 'pending' || w.status === 'running'
+  );
+
+  // Group completed workflows by year
+  const completedWorkflows = filteredWorkflows.filter(w => 
+    w.status === 'completed' || w.status === 'success'
+  );
+
+  const workflowsByYear = completedWorkflows.reduce((acc, workflow) => {
+    // Use created_at or completed_at for grouping by year
+    const dateStr = workflow.created_at || workflow.completed_at;
+    const year = dateStr ? new Date(dateStr).getFullYear() : new Date().getFullYear();
+    if (!acc[year]) {
+      acc[year] = [];
     }
-  ];
+    acc[year].push(workflow);
+    return acc;
+  }, {});
 
-  const transcriptions2025 = [
-    {
-      id: 2,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock bannnnnnnn....mp3',
-    },
-    {
-      id: 3,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock bannnnnnnn....mp3',
-    },
-    {
-      id: 4,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock bannnnnnnn....mp3',
-    },
-    {
-      id: 5,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock bannnnnnnn....mp3',
-    },
-  ];
-
-  const transcriptions2024 = [
-    {
-      id: 6,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock bannnnnnnn....mp3',
-    },
-    {
-      id: 7,
-      date: 'September 6, 2025',
-      time: '4:45',
-      fileName: 'ASIAN KUNG-FU GENERATION - Rock bannnnnnnn....mp3',
-    },
-  ];
+  // Sort years in descending order
+  const sortedYears = Object.keys(workflowsByYear).sort((a, b) => b - a);
 
   const handleDownloadDrums = (id) => {
     console.log('Download drums track:', id);
@@ -126,19 +185,43 @@ export const TranscriptionHistory = () => {
                 />
               </div>
 
+              {/* Loading state */}
+              {loading && (
+                <div className="history-section">
+                  <p>Loading workflows...</p>
+                </div>
+              )}
+
+              {/* Error state */}
+              {error && (
+                <div className="history-section">
+                  <p style={{ color: 'red' }}>Error: {error}</p>
+                </div>
+              )}
+
+              {/* No results */}
+              {!loading && !error && filteredWorkflows.length === 0 && (
+                <div className="history-section">
+                  <p>No transcriptions found.</p>
+                </div>
+              )}
+
               {/* Processing section */}
-              {processingItems.length > 0 && (
+              {!loading && !error && processingItems.length > 0 && (
                 <div className="history-section">
                   <h2 className="section-title">Processing</h2>
                   {processingItems.map((item) => {
-                    const { name, extension } = getFileNameParts(item.fileName);
+                    const filename = item.filename || item.workflow_id || 'Unknown';
+                    const { name, extension } = getFileNameParts(filename);
+                    const progress = item.progress || 0;
+                    const dateStr = item.created_at || item.completed_at || new Date().toISOString();
                     return (
-                      <div key={item.id} className="processing-card">
+                      <div key={item.workflow_id} className="processing-card">
                         <div className="processing-header">
                           <div className="card-metadata">
-                            <span className="card-date">{item.date}</span>
+                            <span className="card-date">{formatDate(dateStr)}</span>
                             <div className="metadata-divider" />
-                            <span className="card-time">{item.time}</span>
+                            <span className="card-time">{formatTime(dateStr)}</span>
                           </div>
                           <div className="processing-filename">
                             <span className="filename-name">{name}</span>
@@ -148,9 +231,9 @@ export const TranscriptionHistory = () => {
                         <div className="progress-bar">
                           <div 
                             className="progress-fill" 
-                            style={{ width: `${item.progress}%` }}
+                            style={{ width: `${progress}%` }}
                           >
-                            <span className="progress-text">{item.progress}%</span>
+                            <span className="progress-text">{progress}%</span>
                           </div>
                         </div>
                       </div>
@@ -159,39 +242,28 @@ export const TranscriptionHistory = () => {
                 </div>
               )}
 
-              {/* 2025 section */}
-              <div className="history-section">
-                <h2 className="section-title">2025</h2>
-                <div className="cards-grid">
-                  {transcriptions2025.map((item) => (
-                    <TranscriptionCard
-                      key={item.id}
-                      date={item.date}
-                      time={item.time}
-                      fileName={item.fileName}
-                      onDownloadDrums={() => handleDownloadDrums(item.id)}
-                      onDownloadTranscription={() => handleDownloadTranscription(item.id)}
-                    />
-                  ))}
+              {/* Completed workflows grouped by year */}
+              {!loading && !error && sortedYears.map(year => (
+                <div key={year} className="history-section">
+                  <h2 className="section-title">{year}</h2>
+                  <div className="cards-grid">
+                    {workflowsByYear[year].map((item) => {
+                      const dateStr = item.created_at || item.completed_at || new Date().toISOString();
+                      const filename = item.filename || item.workflow_id || 'Unknown';
+                      return (
+                        <TranscriptionCard
+                          key={item.workflow_id}
+                          date={formatDate(dateStr)}
+                          time={formatTime(dateStr)}
+                          fileName={filename}
+                          onDownloadDrums={() => handleDownloadDrums(item.workflow_id)}
+                          onDownloadTranscription={() => handleDownloadTranscription(item.workflow_id)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-
-              {/* 2024 section */}
-              <div className="history-section">
-                <h2 className="section-title">2024</h2>
-                <div className="cards-grid">
-                  {transcriptions2024.map((item) => (
-                    <TranscriptionCard
-                      key={item.id}
-                      date={item.date}
-                      time={item.time}
-                      fileName={item.fileName}
-                      onDownloadDrums={() => handleDownloadDrums(item.id)}
-                      onDownloadTranscription={() => handleDownloadTranscription(item.id)}
-                    />
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

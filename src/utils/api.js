@@ -16,6 +16,8 @@ export async function authenticatedFetch(url, options = {}, getToken) {
   // Get the JWT token from Clerk
   const token = await getToken();
   
+  console.log('Token obtained:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+  
   // Merge headers, adding Authorization if token exists
   const headers = {
     ...options.headers,
@@ -23,7 +25,11 @@ export async function authenticatedFetch(url, options = {}, getToken) {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    console.warn('No authentication token available');
   }
+  
+  console.log('Request headers:', headers);
   
   // Make the fetch request with the token
   return fetch(url, {
@@ -56,6 +62,63 @@ export async function uploadFileAuthenticated(file, endpoint, getToken, baseUrl 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Upload failed: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Fetch the list of user workflows from the backend
+ * @param {string} baseUrl - Base URL for the API
+ * @param {Function} getToken - Clerk's getToken function from useAuth hook
+ * @returns {Promise<Array>} - Array of workflow objects
+ */
+export async function fetchWorkflowList(baseUrl, getToken) {
+  const response = await authenticatedFetch(
+    `${baseUrl}/workflow/list`,
+    {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+      },
+    },
+    getToken
+  );
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to fetch workflows: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  console.log('API Response from /workflow/list:', data);
+  console.log('Is array?', Array.isArray(data));
+  console.log('Type:', typeof data);
+  return data;
+}
+
+/**
+ * Fetch detailed status for a specific workflow
+ * @param {string} baseUrl - Base URL for the API
+ * @param {string} workflowId - The workflow ID
+ * @param {Function} getToken - Clerk's getToken function from useAuth hook
+ * @returns {Promise<Object>} - Workflow status object
+ */
+export async function fetchWorkflowStatus(baseUrl, workflowId, getToken) {
+  const response = await authenticatedFetch(
+    `${baseUrl}/workflow/status/${workflowId}`,
+    {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+      },
+    },
+    getToken
+  );
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to fetch workflow status: ${response.statusText}`);
   }
   
   return response.json();

@@ -10,6 +10,9 @@ const config = {
   appName: process.env.REACT_APP_NAME || 'DrumScore',
   appUrl: process.env.REACT_APP_URL || 'http://localhost:3000',
 
+  // API Configuration
+  apiBaseUrl: process.env.REACT_APP_API_BASE_URL || 'https://api-orchestrator-test-700212390421.asia-southeast1.run.app',
+
   // Feature Flags
   enableAnalytics: process.env.REACT_APP_ENABLE_ANALYTICS === 'true',
   enableDebug: process.env.NODE_ENV === 'development',
