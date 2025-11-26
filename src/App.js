@@ -13,6 +13,7 @@ import { LoginModal } from './components/LoginModal';
 import TranscriptionHistory from './components/TranscriptionHistory';
 import SSOCallback from './components/SSOCallback';
 import Blog from './components/Blog';
+import About from './components/About';
 import Element from './components/Element';
 
 function LandingPage({ onLoginClick }) {
@@ -58,6 +59,7 @@ function App() {
         <Route path="/" element={<LandingPage onLoginClick={openLoginModal} />} />
         <Route path="/history" element={<TranscriptionHistory />} />
         <Route path="/blog" element={<Blog onLoginClick={openLoginModal} />} />
+        <Route path="/about" element={<About onLoginClick={openLoginModal} />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
       </Routes>
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />

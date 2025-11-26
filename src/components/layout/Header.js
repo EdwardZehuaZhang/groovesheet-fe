@@ -67,9 +67,9 @@ function Header({ onLoginClick }) {
               <a href="#help" className="nav-item">
                 Help
               </a>
-              <a href="#about" className="nav-item">
+              <Link to="/about" className="nav-item">
                 About
-              </a>
+              </Link>
               <Link to="/blog" className="nav-item">
                 Blog
               </Link>
@@ -144,9 +144,9 @@ function Header({ onLoginClick }) {
                 <a href="#help" className="mobile-nav-item" onClick={closeMobileMenu}>
                   Help
                 </a>
-                <a href="#about" className="mobile-nav-item" onClick={closeMobileMenu}>
+                <Link to="/about" className="mobile-nav-item" onClick={closeMobileMenu}>
                   About
-                </a>
+                </Link>
                 <Link to="/blog" className="mobile-nav-item" onClick={closeMobileMenu}>
                   Blog
                 </Link>
