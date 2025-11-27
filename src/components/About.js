@@ -1,10 +1,113 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
 import * as PhosphorIcons from '@phosphor-icons/react';
 import './About.css';
 
 function About({ onLoginClick }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [consent, setConsent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null); // 'success', 'error', or null
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!consent) {
+      alert('Please agree to the terms before submitting.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const HUBSPOT_PORTAL_ID = process.env.REACT_APP_HUBSPOT_PORTAL_ID;
+      const HUBSPOT_FORM_GUID = process.env.REACT_APP_HUBSPOT_FORM_GUID;
+      
+      // Check if credentials are available
+      if (!HUBSPOT_PORTAL_ID || !HUBSPOT_FORM_GUID) {
+        console.error('HubSpot credentials not configured');
+        setSubmitStatus('error');
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('Submitting to HubSpot:', { HUBSPOT_PORTAL_ID, HUBSPOT_FORM_GUID });
+      
+      // Use HubSpot's CORS-friendly endpoint
+      const response = await fetch(
+        `https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fields: [
+              {
+                name: 'firstname',
+                value: formData.name
+              },
+              {
+                name: 'email',
+                value: formData.email
+              },
+              ...(formData.message ? [{
+                name: 'message',
+                value: formData.message
+              }] : [])
+            ],
+            context: {
+              pageUri: window.location.href,
+              pageName: 'About - Partner Form'
+            },
+            legalConsentOptions: {
+              consent: {
+                consentToProcess: true,
+                text: 'I agree that GrooveSheet can use this information to get in touch with me and provide the details I requested.',
+                communications: [
+                  {
+                    value: true,
+                    subscriptionTypeId: 999,
+                    text: 'I agree to receive marketing communications from GrooveSheet.'
+                  }
+                ]
+              }
+            }
+          })
+        }
+      );
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setFormData({ name: '', email: '', message: '' });
+        setConsent(false);
+      } else {
+        const errorText = await response.text();
+        console.error('HubSpot submission error:', response.status, errorText);
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="about-page">
       <Header onLoginClick={onLoginClick} />
@@ -111,35 +214,74 @@ function About({ onLoginClick }) {
             <div className="partner-text">
               <p className="about-label">Partner with us</p>
               <p className="partner-description">
-                If you need results， GrooveSheet is here to give you that edge by cutting time 
+                If you need results, GrooveSheet is here to give you that edge by cutting time 
                 and reducing costs. Let us help you take the first step.
               </p>
             </div>
             
             <div className="partner-form">
-              <div className="form-group">
-                <input type="text" placeholder="Name" className="form-input" />
-              </div>
-              
-              <div className="form-group">
-                <input type="email" placeholder="Company Email" className="form-input" />
-              </div>
-              
-              <div className="form-group">
-                <textarea placeholder="Message (Optional)" className="form-textarea"></textarea>
-              </div>
-              
-              <div className="form-checkbox">
-                <div className="checkbox-wrapper">
-                  <PhosphorIcons.Check size={21} weight="regular" />
+              <form onSubmit={handleSubmit}>
+                <input 
+                  type="text" 
+                  name="name"
+                  placeholder="Name" 
+                  className="form-input"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+                
+                <input 
+                  type="email" 
+                  name="email"
+                  placeholder="Company Email" 
+                  className="form-input"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+                
+                <textarea 
+                  name="message"
+                  placeholder="Message (Optional)" 
+                  className="form-textarea"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                ></textarea>
+                
+                <div className="form-checkbox">
+                  <div 
+                    className={`checkbox-wrapper ${consent ? 'checked' : ''}`}
+                    onClick={() => setConsent(!consent)}
+                  >
+                    {consent && <PhosphorIcons.Check size={21} weight="regular" />}
+                  </div>
+                  <p className="checkbox-label">
+                    By submitting your data in the contact form, you agree that GrooveSheet 
+                    can use this information to get in touch with you and provide the details you requested.
+                  </p>
                 </div>
-                <p className="checkbox-label">
-                  By submitting your data in the contact form, you agree that GrooveSheet 
-                  can use this information to get in touch with you and provide the details you requested.
-                </p>
-              </div>
-              
-              <button className="form-submit">Confirm</button>
+                
+                {submitStatus === 'success' && (
+                  <div className="form-message success">
+                    Thank you! Your message has been sent successfully.
+                  </div>
+                )}
+                
+                {submitStatus === 'error' && (
+                  <div className="form-message error">
+                    Sorry, there was an error submitting your form. Please try again.
+                  </div>
+                )}
+                
+                <button 
+                  type="submit" 
+                  className="form-submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Sending...' : 'Confirm'}
+                </button>
+              </form>
             </div>
           </section>
         </div>
