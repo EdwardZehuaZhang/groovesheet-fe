@@ -241,7 +241,7 @@
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 100;
+  z-index: 10000;
 }
 
 .instrument-option {

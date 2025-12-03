@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import confetti from 'canvas-confetti';
 import { authenticatedFetch } from '../utils/api';
+import { LuGuitar, LuMusic4, LuDrum } from 'react-icons/lu';
+import { LiaMicrophoneAltSolid } from 'react-icons/lia';
 import './Hero.css';
 
 // Base URL for the new Orchestrator backend
@@ -49,6 +52,19 @@ const CloseIcon = () => (
   </svg>
 );
 
+const BassIcon = () => (
+  <svg className="fill-none stroke-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+    <title>bass-svg</title>
+    <g id="Layer 1">
+      <path fillRule="evenodd" d="m11.5 12.5l4.9-4.9"></path>
+      <path fillRule="evenodd" d="m21.2 2.9c-0.1-0.1-0.5-0.2-0.6-0.2-0.1-0.1-0.1-0.1-0.4-0.1q-0.2 0-0.3 0.1-0.2 0.1-0.4 0.2l-1.9 1.7c-0.2 0-0.4 0.2-0.5 0.3-0.1 0.1-0.2 0.2-0.3 0.3q0 0.2-0.1 0.3 0 0.2 0 0.4l0.2 0.5c0 0 0 0.3 0 0.3 0 0 0 0.1-0.1 0.2q0 0.2-0.1 0.4-0.1 0.1-0.3 0.3 0.2-0.2 0.3-0.3 0.2-0.1 0.4-0.1 0.1-0.1 0.3-0.2c0.2 0 0.5 0.1 0.6 0.1h0.6q0.2 0 0.3 0 0.2 0 0.4-0.1 0.2-0.1 0.4-0.2c0.1-0.1 0.2-0.1 0.3-0.3 0.2-0.3 0.3-0.7 0.6-1.1 0 0 0.1-0.2 0.7-0.6 0.1-0.1 0.6-0.1 0.6-0.2 0-0.2 0.1-0.2 0-0.3 0-0.1 0-0.4-0.1-0.7-0.2-0.4-0.6-0.7-0.6-0.7z"></path>
+      <path d="m6 16l2 2"></path>
+      <path id="Layer copy" fillRule="evenodd" d="m9 14l1 1"></path>
+      <path fillRule="evenodd" d="m8.1 9.2c1.5-3.4 3.5-3.6 4.2-2.5 0.7 1.2-0.9 2.3 0 3.4 0.7 1 2.1-0.2 1 0.7-2 1.7 2.2 0.1 3.2 1.5 0.6 0.8-0.2 2.3-1.4 2.7l-1.7 0.7c-0.6 0.3-0.6 0.4-0.8 0.5-0.1 0.1-0.2 0.6-0.2 0.6-0.1 0.3-0.1 0.3-0.1 0.9 0 0.2 0 0.5 0 0.6 0 0.5 0 0.8-0.2 1.5-0.2 0.5-0.4 1.1-0.9 1.5-0.4 0.5-0.7 0.6-1.2 0.7-0.6 0.2-1.3 0.3-2 0.1-3-0.9-5.8-3.4-6.2-6.3 0-0.5 0.1-1.3 0.3-1.8 0.3-0.4 0.5-0.8 1.1-1.1 0.4-0.2 0.8-0.4 1.3-0.6 0.5-0.2 0.6-0.3 1.1-0.5 0.2-0.1 0.5-0.2 0.7-0.3q0.2-0.1 0.5-0.2 0.2-0.2 0.4-0.4 0.2-0.2 0.3-0.5z"></path>
+    </g>
+  </svg>
+);
+
 function Hero({ onLoginRequired }) {
   const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
@@ -70,10 +86,11 @@ function Hero({ onLoginRequired }) {
   const progressTimeoutRef = useRef(null);
 
   const instruments = [
-    { value: 'vocals', label: 'Vocals' },
-    { value: 'drums', label: 'Drums' },
-    { value: 'bass', label: 'Bass' },
-    { value: 'other', label: 'Other' }
+    { value: 'vocals', label: 'Vocals', IconComponent: LiaMicrophoneAltSolid },
+    { value: 'drums', label: 'Drums', IconComponent: LuDrum },
+    { value: 'bass', label: 'Bass', IconComponent: BassIcon },
+    { value: 'jazz_bass', label: 'Jazz Bass', IconComponent: LuMusic4 },
+    { value: 'other', label: 'Other', IconComponent: LuGuitar }
   ];
 
   // Cleanup progress simulation on unmount
@@ -299,10 +316,13 @@ function Hero({ onLoginRequired }) {
     }, 30000);
 
     try {
-      // Use transcription workflow only for drums, separation workflow for others
-      const workflowEndpoint = selectedInstrument === 'drums' 
-        ? '/workflow/separate_to_drumscore' 
-        : '/workflow/demucs_separate';
+      // Workflow selection logic
+      let workflowEndpoint = '/workflow/demucs_separate';
+      if (selectedInstrument === 'drums') {
+        workflowEndpoint = '/workflow/separate_to_drumscore';
+      } else if (selectedInstrument === 'jazz_bass') {
+        workflowEndpoint = '/workflow/separate_to_jazz_bass_score';
+      }
       
       const response = await authenticatedFetch(
         `${API_BASE_URL}${workflowEndpoint}`,
@@ -447,8 +467,15 @@ function Hero({ onLoginRequired }) {
 
   // Download transcription for drums, separated track for other instruments
   const downloadInstrumentFile = async (id) => {
-    // For drums: download transcription, for others: download separated instrument track
-    const fileKey = selectedInstrument === 'drums' ? 'transcription' : selectedInstrument;
+    // For drums: download transcription
+    // For jazz_bass: download jazz_bass_transcription
+    // For others: download separated instrument track
+    let fileKey = selectedInstrument;
+    if (selectedInstrument === 'drums') {
+      fileKey = 'transcription';
+    } else if (selectedInstrument === 'jazz_bass') {
+      fileKey = 'jazz_bass_transcription';
+    }
     const url = `${API_BASE_URL}/workflow/download/${id}/${fileKey}`;
     console.log('Fetching from:', url);
     const res = await authenticatedFetch(url, {}, getToken);
@@ -555,6 +582,7 @@ function Hero({ onLoginRequired }) {
   };
 
   // Get status message
+  // eslint-disable-next-line no-unused-vars
   const getStatusMessage = () => {
     if (error) return error;
     
@@ -610,7 +638,12 @@ function Hero({ onLoginRequired }) {
             className="instrument-dropdown-btn"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
-            <span className="instrument-label">
+            <span className="instrument-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {(() => {
+                const instrument = instruments.find(i => i.value === selectedInstrument);
+                const IconComp = instrument?.IconComponent || LuGuitar;
+                return <IconComp size={20} />;
+              })()}
               {instruments.find(i => i.value === selectedInstrument)?.label || 'Drums'}
             </span>
             <svg 
@@ -624,26 +657,42 @@ function Hero({ onLoginRequired }) {
               <path d="M1.2 13.8L12 3L22.8 13.8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          {isDropdownOpen && (
-            <div className="instrument-dropdown-menu">
-              {instruments.map((instrument) => (
-                <button
-                  key={instrument.value}
-                  className={`instrument-option ${selectedInstrument === instrument.value ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedInstrument(instrument.value);
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  <span>{instrument.label}</span>
-                  {selectedInstrument === instrument.value && (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
+          {isDropdownOpen && dropdownRef.current && ReactDOM.createPortal(
+            <div 
+              className="instrument-dropdown-menu"
+              style={{
+                position: 'fixed',
+                top: `${dropdownRef.current.getBoundingClientRect().bottom + 4}px`,
+                left: `${dropdownRef.current.getBoundingClientRect().left}px`,
+                width: `${dropdownRef.current.getBoundingClientRect().width}px`,
+                zIndex: 10000
+              }}
+            >
+              {instruments.map((instrument) => {
+                const IconComp = instrument.IconComponent;
+                return (
+                  <button
+                    key={instrument.value}
+                    className={`instrument-option ${selectedInstrument === instrument.value ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedInstrument(instrument.value);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IconComp size={20} />
+                      {instrument.label}
+                    </span>
+                    {selectedInstrument === instrument.value && (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body
           )}
         </div>
 
