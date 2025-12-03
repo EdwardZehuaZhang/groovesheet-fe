@@ -80,8 +80,10 @@ function Hero({ onLoginRequired }) {
   const [downloadFilename, setDownloadFilename] = useState(null);
   const [selectedInstrument, setSelectedInstrument] = useState('drums');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const dropdownMenuRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const progressTimeoutRef = useRef(null);
 
@@ -205,17 +207,53 @@ function Hero({ onLoginRequired }) {
     // Don't set to 100% - keep at current progress (99%)
   };
 
+  // Update dropdown position when it opens or on scroll/resize
+  useEffect(() => {
+    const updatePosition = () => {
+      if (dropdownRef.current && isDropdownOpen) {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width
+        });
+      }
+    };
+
+    if (isDropdownOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isDropdownOpen]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      // Check if click is outside both the button and the portaled dropdown menu
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        dropdownMenuRef.current &&
+        !dropdownMenuRef.current.contains(event.target)
+      ) {
         setIsDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   // Trigger confetti when download completes
   useEffect(() => {
@@ -657,14 +695,15 @@ function Hero({ onLoginRequired }) {
               <path d="M1.2 13.8L12 3L22.8 13.8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          {isDropdownOpen && dropdownRef.current && ReactDOM.createPortal(
+          {isDropdownOpen && ReactDOM.createPortal(
             <div 
+              ref={dropdownMenuRef}
               className="instrument-dropdown-menu"
               style={{
                 position: 'fixed',
-                top: `${dropdownRef.current.getBoundingClientRect().bottom + 4}px`,
-                left: `${dropdownRef.current.getBoundingClientRect().left}px`,
-                width: `${dropdownRef.current.getBoundingClientRect().width}px`,
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`,
                 zIndex: 10000
               }}
             >
