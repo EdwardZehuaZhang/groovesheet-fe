@@ -22,7 +22,30 @@ function Hero({ onLoginRequired }) {
   const [isDragging, setIsDragging] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [downloadFilename, setDownloadFilename] = useState(null);
+  const [selectedInstrument, setSelectedInstrument] = useState('drums');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const fileInputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const instruments = [
+    { value: 'vocals', label: 'Vocals' },
+    { value: 'drums', label: 'Drums' },
+    { value: 'bass', label: 'Bass' },
+    { value: 'piano', label: 'Piano' },
+    { value: 'guitar', label: 'Guitar' }
+  ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Trigger confetti when download completes
   useEffect(() => {
@@ -101,6 +124,10 @@ function Hero({ onLoginRequired }) {
 
     const formData = new FormData();
     formData.append('file', fileToUpload);  // Changed from 'audio_file' to 'file'
+    // Add metadata with selected instrument
+    formData.append('metadata', JSON.stringify({ 
+      instrument: selectedInstrument 
+    }));
 
     setError(null);
     setStatus('uploading');
@@ -193,11 +220,11 @@ function Hero({ onLoginRequired }) {
             console.log('Progress message:', data.last_progress_message);
           }
           if (newStatus === 'completed' || newStatus === 'succeeded' || newStatus === 'success') {
-            console.log('Workflow completed, downloading drums output');
+            console.log(`Workflow completed, downloading ${selectedInstrument} output`);
             stopped = true;
             // Download first, then batch all state updates together
             try {
-              const { objectUrl, filename } = await downloadDrumFile(id);
+              const { objectUrl, filename } = await downloadInstrumentFile(id);
               // Batch state updates - React will batch these together in one render
               setDownloadUrl(objectUrl);
               setDownloadFilename(filename);
@@ -235,9 +262,9 @@ function Hero({ onLoginRequired }) {
     poll();
   };
 
-  // Download drums file from the workflow outputs
-  const downloadDrumFile = async (id) => {
-    const url = `${API_BASE_URL}/workflow/download/${id}/drums`;
+  // Download selected instrument file from the workflow outputs
+  const downloadInstrumentFile = async (id) => {
+    const url = `${API_BASE_URL}/workflow/download/${id}/${selectedInstrument}`;
     console.log('Fetching from:', url);
     const res = await authenticatedFetch(url, {}, getToken);
     console.log('Download response:', res.status, res.statusText);
@@ -250,7 +277,7 @@ function Hero({ onLoginRequired }) {
     console.log('Blob received:', blob.size, 'bytes');
     // Try to get filename from Content-Disposition header
     const cd = res.headers.get('content-disposition') || '';
-    let filename = file?.name ? file.name.replace(/\.[^.]+$/, '_drums.wav') : `drums_${id}.wav`;
+    let filename = file?.name ? file.name.replace(/\.[^.]+$/, `_${selectedInstrument}.wav`) : `${selectedInstrument}_${id}.wav`;
     const match = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
     if (match) {
       filename = decodeURIComponent(match[1] || match[2]);
@@ -343,12 +370,13 @@ function Hero({ onLoginRequired }) {
     
     switch (status) {
       case 'uploading':
-        return 'Uploading file...';
+        return `Uploading file... ${progress}%`;
       case 'pending':
         return 'Job queued...';
       case 'queued':
         return 'Job queued...';
       case 'running':
+      case 'processing':
         return `Processing... ${progress}%`;
       case 'separating':
         return 'Separating drum track...';
@@ -356,8 +384,6 @@ function Hero({ onLoginRequired }) {
         return 'Transcribing drums to notation...';
       case 'generating_sheet':
         return 'Generating sheet music...';
-      case 'processing':
-        return `Processing... ${progress}%`;
       case 'completed':
       case 'succeeded':
       case 'success':
@@ -379,7 +405,7 @@ function Hero({ onLoginRequired }) {
               High-quality drum notation generation with the world's #1 AI-powered technology.
             </p>
           </div>
-          <div className="hero-disclaimer">
+          <div className="hero-disclaimer hero-disclaimer-desktop">
             <span>By uploading a file, you agree to our </span>
             <a href="#terms">Terms of Service</a>
           </div>
@@ -416,16 +442,22 @@ function Hero({ onLoginRequired }) {
                   <p>{file?.name}</p>
                 </div>
               </div>
-              <button className="browse-btn" onClick={handleManualDownload}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 3V16M12 16L16 12M12 16L8 12M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Download Drums Track</span>
-              </button>
+              <div className="upload-controls">
+                <button 
+                  className="browse-btn" 
+                  onClick={handleManualDownload}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3V16M12 16L16 12M12 16L8 12M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>Download {instruments.find(i => i.value === selectedInstrument)?.label || 'Track'}</span>
+                </button>
+              </div>
             </>
           ) : (
           <>
-          <div className="upload-content">
+          {/* Top Section - Icon and Text */}
+          <div className="upload-content-top">
             <div className="upload-icon">
               <svg width="64" height="65" viewBox="0 0 64 65" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clipPath="url(#clip0_38_12089)">
@@ -439,39 +471,90 @@ function Hero({ onLoginRequired }) {
               </svg>
             </div>
             <div className="upload-text">
-              <h3>Drop your tracks here</h3>
+              <h3>Drop tracks & choose stem</h3>
               <p>Upload up to 20 files to turn into notation</p>
             </div>
           </div>
 
-          {/* Status and Progress */}
-          {(status || error) && status !== 'completed' && status !== 'succeeded' && status !== 'success' && (
-            <div className="upload-status">
-              <p className={error ? 'error' : 'status-message'}>
-                {getStatusMessage()}
-              </p>
-              {status && status !== 'completed' && !error && (
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Bottom Section - Instrument Selector and Browse Button */}
+          <div className="upload-controls">
+            {/* Instrument Selector */}
+            <div className="instrument-selector" ref={dropdownRef}>
+            <button 
+              className="instrument-dropdown-btn"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              disabled={status && status !== 'completed' && status !== 'failed'}
+            >
+              <span className="instrument-label">
+                {instruments.find(i => i.value === selectedInstrument)?.label || 'Select Instrument'}
+              </span>
+              <svg 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+              >
+                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {isDropdownOpen && (
+              <div className="instrument-dropdown-menu">
+                {instruments.map((instrument) => (
+                  <button
+                    key={instrument.value}
+                    className={`instrument-option ${selectedInstrument === instrument.value ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedInstrument(instrument.value);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <span>{instrument.label}</span>
+                    {selectedInstrument === instrument.value && (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <button 
-            className="browse-btn" 
-            onClick={handleBrowseClick}
-            disabled={status && status !== 'completed' && status !== 'failed'}
-          >
-            {status && status !== 'completed' && status !== 'failed' 
-              ? 'Processing...' 
-              : 'Browse Files'}
-          </button>
+            {/* Status and Progress */}
+            {(status || error) && status !== 'completed' && status !== 'succeeded' && status !== 'success' && (
+              <div className="upload-status">
+                <p className={error ? 'error' : 'status-message'}>
+                  {getStatusMessage()}
+                </p>
+                {(status === 'uploading' || status === 'pending' || status === 'running' || status === 'processing') && !error && (
+                  <div className={`progress-bar${progress === 0 ? ' animated' : ''}`}>
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button 
+              className="browse-btn" 
+              onClick={handleBrowseClick}
+              disabled={status && status !== 'completed' && status !== 'failed'}
+            >
+              {status && status !== 'completed' && status !== 'failed' 
+                ? 'Processing...' 
+                : 'Browse Files'}
+            </button>
+          </div>
           </>
           )}
+        </div>
+        <div className="hero-disclaimer hero-disclaimer-mobile">
+          <span>By uploading a file, you agree to our </span>
+          <a href="#terms">Terms of Service</a>
         </div>
       </div>
     </section>

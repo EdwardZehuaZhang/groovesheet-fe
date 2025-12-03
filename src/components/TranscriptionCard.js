@@ -5,8 +5,9 @@ import './TranscriptionCard.css';
 export const TranscriptionCard = ({ 
   date, 
   time, 
-  fileName, 
-  onDownloadDrums, 
+  fileName,
+  instrument = 'drums',
+  onDownloadInstrument, 
   onDownloadTranscription 
 }) => {
   // Split filename into name and extension
@@ -22,6 +23,9 @@ export const TranscriptionCard = ({
   };
 
   const { name, extension } = getFileNameParts(fileName);
+  
+  // Capitalize first letter of instrument
+  const instrumentLabel = instrument.charAt(0).toUpperCase() + instrument.slice(1);
 
   return (
     <div className="transcription-card">
@@ -40,10 +44,10 @@ export const TranscriptionCard = ({
       <div className="card-downloads">
         <button 
           className="download-button" 
-          onClick={onDownloadDrums}
-          aria-label="Download drums track"
+          onClick={onDownloadInstrument}
+          aria-label={`Download ${instrumentLabel} track`}
         >
-          <span>Drums Track</span>
+          <span>{instrumentLabel} Track</span>
           <ArrowDown size={28} weight="regular" />
         </button>
         

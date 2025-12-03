@@ -135,14 +135,64 @@ export const TranscriptionHistory = () => {
   // Sort years in descending order
   const sortedYears = Object.keys(workflowsByYear).sort((a, b) => b - a);
 
-  const handleDownloadDrums = (id) => {
-    console.log('Download drums track:', id);
-    // Implement download logic
+  const handleDownloadInstrument = async (workflowId, instrument) => {
+    try {
+      const token = await getToken();
+      const url = `${config.apiBaseUrl}/workflow/download/${workflowId}/${instrument}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${instrument}_${workflowId}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      setError('Failed to download file');
+    }
   };
 
-  const handleDownloadTranscription = (id) => {
-    console.log('Download transcription:', id);
-    // Implement download logic
+  const handleDownloadTranscription = async (workflowId) => {
+    try {
+      const token = await getToken();
+      const url = `${config.apiBaseUrl}/workflow/download/${workflowId}/transcription`;
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `transcription_${workflowId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      setError('Failed to download transcription');
+    }
   };
 
   const handleBack = () => {
@@ -250,13 +300,16 @@ export const TranscriptionHistory = () => {
                     {workflowsByYear[year].map((item) => {
                       const dateStr = item.created_at || item.completed_at || new Date().toISOString();
                       const filename = item.filename || item.workflow_id || 'Unknown';
+                      // Get instrument from metadata, default to 'drums'
+                      const instrument = item.metadata?.instrument || 'drums';
                       return (
                         <TranscriptionCard
                           key={item.workflow_id}
                           date={formatDate(dateStr)}
                           time={formatTime(dateStr)}
                           fileName={filename}
-                          onDownloadDrums={() => handleDownloadDrums(item.workflow_id)}
+                          instrument={instrument}
+                          onDownloadInstrument={() => handleDownloadInstrument(item.workflow_id, instrument)}
                           onDownloadTranscription={() => handleDownloadTranscription(item.workflow_id)}
                         />
                       );
