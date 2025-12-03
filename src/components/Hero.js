@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { CheckCircle } from '@phosphor-icons/react';
 import confetti from 'canvas-confetti';
 import { authenticatedFetch } from '../utils/api';
 import './Hero.css';
@@ -8,6 +7,47 @@ import './Hero.css';
 // Base URL for the new Orchestrator backend
 // Use /api in both dev and production - Vercel rewrites handle the proxy
 const API_BASE_URL = '/api';
+
+// SVG Icons as components
+const TrayArrowUpIcon = () => (
+  <svg width="64" height="65" viewBox="0 0 64 65" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g clipPath="url(#clip0_tray)">
+      <path d="M52 8.5H12C10.9391 8.5 9.92172 8.92143 9.17157 9.67157C8.42143 10.4217 8 11.4391 8 12.5V52.5C8 53.5609 8.42143 54.5783 9.17157 55.3284C9.92172 56.0786 10.9391 56.5 12 56.5H52C53.0609 56.5 54.0783 56.0786 54.8284 55.3284C55.5786 54.5783 56 53.5609 56 52.5V12.5C56 11.4391 55.5786 10.4217 54.8284 9.67157C54.0783 8.92143 53.0609 8.5 52 8.5ZM22.585 25.085L30.585 17.085C30.7707 16.899 30.9913 16.7515 31.2341 16.6509C31.4769 16.5502 31.7372 16.4984 32 16.4984C32.2628 16.4984 32.5231 16.5502 32.7659 16.6509C33.0087 16.7515 33.2293 16.899 33.415 17.085L41.415 25.085C41.6008 25.2708 41.7482 25.4914 41.8488 25.7342C41.9494 25.977 42.0011 26.2372 42.0011 26.5C42.0011 26.7628 41.9494 27.023 41.8488 27.2658C41.7482 27.5086 41.6008 27.7292 41.415 27.915C41.2292 28.1008 41.0086 28.2482 40.7658 28.3488C40.523 28.4494 40.2628 28.5011 40 28.5011C39.7372 28.5011 39.477 28.4494 39.2342 28.3488C38.9914 28.2482 38.7708 28.1008 38.585 27.915L34 23.3275V38.5C34 39.0304 33.7893 39.5391 33.4142 39.9142C33.0391 40.2893 32.5304 40.5 32 40.5C31.4696 40.5 30.9609 40.2893 30.5858 39.9142C30.2107 39.5391 30 39.0304 30 38.5V23.3275L25.415 27.915C25.0397 28.2903 24.5307 28.5011 24 28.5011C23.4693 28.5011 22.9603 28.2903 22.585 27.915C22.2097 27.5397 21.9989 27.0307 21.9989 26.5C21.9989 25.9693 22.2097 25.4603 22.585 25.085ZM52 52.5H12V42.5H19.1725L24 47.3275C24.3701 47.7006 24.8106 47.9963 25.296 48.1976C25.7814 48.3989 26.302 48.5017 26.8275 48.5H37.1725C37.698 48.5017 38.2186 48.3989 38.704 48.1976C39.1894 47.9963 39.6299 47.7006 40 47.3275L44.8275 42.5H52V52.5Z" fill="white"/>
+    </g>
+    <defs>
+      <clipPath id="clip0_tray">
+        <rect width="64" height="64" fill="white" transform="translate(0 0.5)"/>
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+const MagicWandIcon = () => (
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M13.3333 42.6667L21.3333 50.6667L50.6667 21.3333L42.6667 13.3333L13.3333 42.6667Z" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M32 10.6667V5.33337" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M53.3333 32H58.6667" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M48 16L51.7333 12.2667" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 48L12.2667 51.7333" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M5.33337 32H10.6667" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 16L12.2667 12.2667" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M32 58.6667V53.3334" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M48 48L51.7333 51.7333" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const CheckCircleIcon = () => (
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="28" fill="white" stroke="white" strokeWidth="4"/>
+    <path d="M20 32L28 40L44 24" stroke="#171717" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M27 9L9 27M9 9L27 27" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
 
 function Hero({ onLoginRequired }) {
   const { isSignedIn, isLoaded } = useUser();
@@ -26,14 +66,131 @@ function Hero({ onLoginRequired }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const progressIntervalRef = useRef(null);
+  const progressTimeoutRef = useRef(null);
 
   const instruments = [
     { value: 'vocals', label: 'Vocals' },
     { value: 'drums', label: 'Drums' },
     { value: 'bass', label: 'Bass' },
-    { value: 'piano', label: 'Piano' },
-    { value: 'guitar', label: 'Guitar' }
+    { value: 'other', label: 'Other' }
   ];
+
+  // Cleanup progress simulation on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      if (progressTimeoutRef.current) {
+        clearTimeout(progressTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Determine the current UI state based on status
+  const getUIState = () => {
+    console.log('🎯 getUIState - current status:', status, 'progress:', progress);
+    
+    if (status === 'uploading') {
+      console.log('📤 UI State: UPLOADING');
+      return 'uploading';
+    }
+    
+    if (status === 'pending' || status === 'running' || status === 'processing' || 
+        status === 'separating' || status === 'transcribing' || status === 'generating_sheet' ||
+        status === 'started') { // Add 'started' status
+      console.log('⚙️ UI State: PROCESSING');
+      return 'processing';
+    }
+    
+    if (status === 'completed' || status === 'succeeded' || status === 'success') {
+      console.log('✅ UI State: SUCCESS');
+      return 'success';
+    }
+    
+    console.log('💤 UI State: IDLE (default)');
+    return 'idle'; // Default idle state
+  };
+
+  const uiState = getUIState();
+  console.log('🎨 Current UI State:', uiState);
+
+  // Simulate progress from 11-99% with different speeds for upload vs processing
+  const simulateProgress = (isUploadPhase = false) => {
+    // Clear any existing intervals
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    if (progressTimeoutRef.current) {
+      clearTimeout(progressTimeoutRef.current);
+    }
+
+    // Different durations for upload (5s) vs processing (60s)
+    const numSteps = 20;
+    const totalDuration = isUploadPhase ? 5000 : 60000; // 5 seconds for upload, 60 seconds for processing
+    const startProgress = 11; // Start at 11%
+    const endProgress = 99; // End at 99% until actual completion
+    const totalProgressRange = endProgress - startProgress; // 88%
+    
+    // Generate random intervals based on phase
+    const intervals = [];
+    for (let i = 0; i < numSteps; i++) {
+      if (isUploadPhase) {
+        intervals.push(Math.random() * 300 + 100); // Random between 100-400ms for fast upload
+      } else {
+        intervals.push(Math.random() * 4000 + 1000); // Random between 1000-5000ms for processing
+      }
+    }
+    
+    // Normalize to sum to totalDuration
+    const sum = intervals.reduce((a, b) => a + b, 0);
+    const normalizedIntervals = intervals.map(interval => (interval / sum) * totalDuration);
+    
+    // Generate random progress increments that sum to totalProgressRange
+    const progressIncrements = [];
+    for (let i = 0; i < numSteps; i++) {
+      progressIncrements.push(Math.random());
+    }
+    const progressSum = progressIncrements.reduce((a, b) => a + b, 0);
+    const normalizedIncrements = progressIncrements.map(inc => (inc / progressSum) * totalProgressRange);
+    
+    let currentStep = 0;
+    let currentProgress = startProgress;
+    
+    const executeStep = () => {
+      if (currentStep >= numSteps) {
+        setProgress(endProgress);
+        return;
+      }
+      
+      currentProgress += normalizedIncrements[currentStep];
+      setProgress(Math.min(Math.round(currentProgress), endProgress));
+      
+      currentStep++;
+      
+      if (currentStep < numSteps) {
+        progressTimeoutRef.current = setTimeout(executeStep, normalizedIntervals[currentStep]);
+      }
+    };
+    
+    // Start at 11%
+    setProgress(startProgress);
+    progressTimeoutRef.current = setTimeout(executeStep, normalizedIntervals[0]);
+  };
+
+  // Stop progress simulation and jump to completion
+  const stopProgressSimulation = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (progressTimeoutRef.current) {
+      clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = null;
+    }
+    setProgress(100);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -130,12 +287,20 @@ function Hero({ onLoginRequired }) {
     }));
 
     setError(null);
+    console.log('🚀 Starting upload - setting status to uploading');
     setStatus('uploading');
-    setProgress(0);
+    
+    // Start simulated progress for upload (fast 5 seconds)
+    simulateProgress(true);
 
     try {
+      // Use transcription workflow only for drums, separation workflow for others
+      const workflowEndpoint = selectedInstrument === 'drums' 
+        ? '/workflow/separate_to_drumscore' 
+        : '/workflow/demucs_separate';
+      
       const response = await authenticatedFetch(
-        `${API_BASE_URL}/workflow/demucs_separate`,
+        `${API_BASE_URL}${workflowEndpoint}`,
         {
           method: 'POST',
           body: formData
@@ -152,13 +317,15 @@ function Hero({ onLoginRequired }) {
       }
 
       const data = await response.json();
-      console.log('Workflow started:', data);
+      console.log('✨ Workflow started:', data);
       const workflowId = data.workflow_id || data.job_id; // fallback if backend returns job_id
       if (!workflowId) {
         throw new Error('No workflow_id returned from server');
       }
       setJobId(workflowId);
-      setStatus(data.status || 'pending');
+      const initialStatus = data.status || 'pending';
+      console.log('📝 Setting initial status after upload:', initialStatus);
+      setStatus(initialStatus);
       
       // Give backend a moment to save job data before polling
       // This helps avoid race conditions with Cloud Run scaling
@@ -213,14 +380,30 @@ function Hero({ onLoginRequired }) {
         } else {
           consecutive404s = 0;
           const data = await response.json();
-          console.log('Status data:', data);
+          console.log('📊 Status data:', data);
           const newStatus = data.status || data.state || 'processing';
+          console.log('🔄 Status transition:', status, '→', newStatus);
           // Optional granular message from backend
           if (data.last_progress_message) {
             console.log('Progress message:', data.last_progress_message);
           }
+          
+          // Check if we're transitioning to a new major state
+          const previousState = status;
+          const isTransitionToProcessing = 
+            (previousState === 'uploading' || previousState === 'pending' || previousState === 'queued') &&
+            (newStatus === 'running' || newStatus === 'processing' || newStatus === 'separating' || 
+             newStatus === 'transcribing' || newStatus === 'generating_sheet');
+          
+          // Restart progress simulation on transition to processing
+          if (isTransitionToProcessing) {
+            simulateProgress(false); // Slow 60-second progress for processing
+          }
+          
           if (newStatus === 'completed' || newStatus === 'succeeded' || newStatus === 'success') {
-            console.log(`Workflow completed, downloading ${selectedInstrument} output`);
+            // Stop simulation and jump to 100%
+            stopProgressSimulation();
+            console.log('Workflow completed, downloading transcription output');
             stopped = true;
             // Download first, then batch all state updates together
             try {
@@ -229,19 +412,21 @@ function Hero({ onLoginRequired }) {
               setDownloadUrl(objectUrl);
               setDownloadFilename(filename);
               setStatus('completed');
+              setProgress(100);
             } catch (err) {
               console.error('Download error:', err);
               setError(`Download failed: ${err.message}`);
             }
             return;
           } else if (newStatus === 'failed' || newStatus === 'error') {
+            stopProgressSimulation();
             setError(data.message || 'Processing failed.');
             stopped = true;
             return;
           }
-          // Only update status and progress if not completed (completed is set after download)
+          // Only update status (progress is handled by simulation)
+          console.log('💾 Setting status to:', newStatus);
           setStatus(newStatus);
-          setProgress(data.progress || 0);
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -262,9 +447,11 @@ function Hero({ onLoginRequired }) {
     poll();
   };
 
-  // Download selected instrument file from the workflow outputs
+  // Download transcription for drums, separated track for other instruments
   const downloadInstrumentFile = async (id) => {
-    const url = `${API_BASE_URL}/workflow/download/${id}/${selectedInstrument}`;
+    // For drums: download transcription, for others: download separated instrument track
+    const fileKey = selectedInstrument === 'drums' ? 'transcription' : selectedInstrument;
+    const url = `${API_BASE_URL}/workflow/download/${id}/${fileKey}`;
     console.log('Fetching from:', url);
     const res = await authenticatedFetch(url, {}, getToken);
     console.log('Download response:', res.status, res.statusText);
@@ -277,7 +464,9 @@ function Hero({ onLoginRequired }) {
     console.log('Blob received:', blob.size, 'bytes');
     // Try to get filename from Content-Disposition header
     const cd = res.headers.get('content-disposition') || '';
-    let filename = file?.name ? file.name.replace(/\.[^.]+$/, `_${selectedInstrument}.wav`) : `${selectedInstrument}_${id}.wav`;
+    const extension = selectedInstrument === 'drums' ? '.mid' : '.wav';
+    const suffix = selectedInstrument === 'drums' ? '_transcription' : `_${selectedInstrument}`;
+    let filename = file?.name ? file.name.replace(/\.[^.]+$/, `${suffix}${extension}`) : `${selectedInstrument}_${id}${extension}`;
     const match = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
     if (match) {
       filename = decodeURIComponent(match[1] || match[2]);
@@ -301,6 +490,9 @@ function Hero({ onLoginRequired }) {
 
   // Reset upload state
   const resetUpload = () => {
+    // Stop any ongoing progress simulation
+    stopProgressSimulation();
+    
     if (downloadUrl) {
       URL.revokeObjectURL(downloadUrl);
     }
@@ -379,21 +571,193 @@ function Hero({ onLoginRequired }) {
       case 'processing':
         return `Processing... ${progress}%`;
       case 'separating':
-        return 'Separating drum track...';
+        return selectedInstrument === 'drums' 
+          ? 'Separating drum track from audio...' 
+          : 'Separating track from audio...';
       case 'transcribing':
-        return 'Transcribing drums to notation...';
+        return 'Transcribing to MIDI notation...';
       case 'generating_sheet':
-        return 'Generating sheet music...';
+        return 'Generating notation...';
       case 'completed':
       case 'succeeded':
       case 'success':
-        return '✓ Download started! Processing complete.';
+        return selectedInstrument === 'drums'
+          ? '✓ Download started! Transcription complete.'
+          : '✓ Download started! Separation complete.';
       case 'failed':
-        return 'Processing failed. Please try again.';
+        return selectedInstrument === 'drums'
+          ? 'Transcription failed. Please try again.'
+          : 'Separation failed. Please try again.';
       default:
         return '';
     }
   };
+
+  // Render functions for each state
+  const renderIdleState = () => (
+    <>
+      <div className="upload-content-top">
+        <div className="upload-icon">
+          <TrayArrowUpIcon />
+        </div>
+        <div className="upload-text">
+          <h3>Drop tracks & choose stem</h3>
+          <p>Upload up to 5 files to turn into notation</p>
+        </div>
+      </div>
+
+      <div className="upload-controls">
+        <div className="instrument-selector" ref={dropdownRef}>
+          <button 
+            className="instrument-dropdown-btn"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            <span className="instrument-label">
+              {instruments.find(i => i.value === selectedInstrument)?.label || 'Drums'}
+            </span>
+            <svg 
+              width="24" 
+              height="15" 
+              viewBox="0 0 24 15" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ transform: isDropdownOpen ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s' }}
+            >
+              <path d="M1.2 13.8L12 3L22.8 13.8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          {isDropdownOpen && (
+            <div className="instrument-dropdown-menu">
+              {instruments.map((instrument) => (
+                <button
+                  key={instrument.value}
+                  className={`instrument-option ${selectedInstrument === instrument.value ? 'selected' : ''}`}
+                  onClick={() => {
+                    setSelectedInstrument(instrument.value);
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  <span>{instrument.label}</span>
+                  {selectedInstrument === instrument.value && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button 
+          className="browse-btn" 
+          onClick={handleBrowseClick}
+        >
+          Browse Files
+        </button>
+      </div>
+    </>
+  );
+
+  const renderUploadingState = () => (
+    <>
+      <div className="upload-content-top">
+        <div className="upload-icon">
+          <TrayArrowUpIcon />
+        </div>
+        <div className="upload-text">
+          <h3>Uploading...</h3>
+        </div>
+      </div>
+
+      <div className="upload-controls">
+        <div className="progress-container">
+          <div className="progress-bar-horizontal">
+            <div 
+              className="progress-bar-fill" 
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            >
+              <span className="progress-percentage">{Math.round(progress)}%</span>
+            </div>
+            <div className="progress-bar-remaining"></div>
+          </div>
+        </div>
+
+        <button 
+          className="cancel-btn" 
+          onClick={resetUpload}
+        >
+          Cancel
+        </button>
+      </div>
+    </>
+  );
+
+  const renderProcessingState = () => (
+    <>
+      <div className="upload-content-top">
+        <div className="upload-icon">
+          <MagicWandIcon />
+        </div>
+        <div className="upload-text">
+          <h3>Transcribing...</h3>
+        </div>
+      </div>
+
+      <div className="upload-controls">
+        <div className="progress-container">
+          <div className="progress-bar-horizontal">
+            <div 
+              className="progress-bar-fill" 
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            >
+              <span className="progress-percentage">{Math.round(progress)}%</span>
+            </div>
+            <div className="progress-bar-remaining"></div>
+          </div>
+        </div>
+
+        <button 
+          className="cancel-btn" 
+          onClick={resetUpload}
+        >
+          Cancel
+        </button>
+      </div>
+    </>
+  );
+
+  const renderSuccessState = () => (
+    <>
+      <button className="close-btn-corner" onClick={resetUpload} aria-label="Close">
+        <CloseIcon />
+      </button>
+
+      <div className="upload-content-top">
+        <div className="upload-icon">
+          <CheckCircleIcon />
+        </div>
+        <div className="upload-text success-text">
+          <h3>Transcription Succussed!</h3>
+          <p className="filename-text">{file?.name || 'Uploaded_file_name.mp3'}</p>
+        </div>
+      </div>
+
+      <div className="upload-controls success-controls">
+        <button 
+          className="download-transcription-btn" 
+          onClick={handleManualDownload}
+        >
+          Download Transcription
+        </button>
+        <button 
+          className="download-stem-btn"
+        >
+          Download Stem
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <section className="hero">
@@ -402,7 +766,7 @@ function Hero({ onLoginRequired }) {
           <div className="hero-text">
             <h1 className="hero-title">Audio In. Drum Score Out.</h1>
             <p className="hero-subtitle">
-              High-quality drum notation generation with the world's #1 AI-powered technology.
+              High-quality audio separation and drum transcription with the world's #1 AI-powered technology.
             </p>
           </div>
           <div className="hero-disclaimer hero-disclaimer-desktop">
@@ -411,7 +775,7 @@ function Hero({ onLoginRequired }) {
           </div>
         </div>
         <div 
-          className={`upload-area ${isDragging ? 'dragging' : ''} ${status ? 'processing' : ''} ${status === 'completed' || status === 'succeeded' || status === 'success' ? 'completed' : ''}`}
+          className={`upload-area state-${uiState} ${isDragging ? 'dragging' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -425,131 +789,17 @@ function Hero({ onLoginRequired }) {
             style={{ display: 'none' }}
           />
 
-          {/* Success State */}
-          {(status === 'completed' || status === 'succeeded' || status === 'success') && downloadFilename ? (
-            <>
-              <button className="close-btn" onClick={resetUpload} aria-label="Close">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-              <div className="upload-content">
-                <div className="upload-icon">
-                  <CheckCircle size={64} weight="fill" color="#22c55e" />
-                </div>
-                <div className="upload-text">
-                  <h3>Processing Complete!</h3>
-                  <p>{file?.name}</p>
-                </div>
-              </div>
-              <div className="upload-controls">
-                <button 
-                  className="browse-btn" 
-                  onClick={handleManualDownload}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 3V16M12 16L16 12M12 16L8 12M3 21H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Download {instruments.find(i => i.value === selectedInstrument)?.label || 'Track'}</span>
-                </button>
-              </div>
-            </>
-          ) : (
-          <>
-          {/* Top Section - Icon and Text */}
-          <div className="upload-content-top">
-            <div className="upload-icon">
-              <svg width="64" height="65" viewBox="0 0 64 65" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g clipPath="url(#clip0_38_12089)">
-                  <path d="M52 8.5H12C10.9391 8.5 9.92172 8.92143 9.17157 9.67157C8.42143 10.4217 8 11.4391 8 12.5V52.5C8 53.5609 8.42143 54.5783 9.17157 55.3284C9.92172 56.0786 10.9391 56.5 12 56.5H52C53.0609 56.5 54.0783 56.0786 54.8284 55.3284C55.5786 54.5783 56 53.5609 56 52.5V12.5C56 11.4391 55.5786 10.4217 54.8284 9.67157C54.0783 8.92143 53.0609 8.5 52 8.5ZM22.585 25.085L30.585 17.085C30.7707 16.899 30.9913 16.7515 31.2341 16.6509C31.4769 16.5502 31.7372 16.4984 32 16.4984C32.2628 16.4984 32.5231 16.5502 32.7659 16.6509C33.0087 16.7515 33.2293 16.899 33.415 17.085L41.415 25.085C41.6008 25.2708 41.7482 25.4914 41.8488 25.7342C41.9494 25.977 42.0011 26.2372 42.0011 26.5C42.0011 26.7628 41.9494 27.023 41.8488 27.2658C41.7482 27.5086 41.6008 27.7292 41.415 27.915C41.2292 28.1008 41.0086 28.2482 40.7658 28.3488C40.523 28.4494 40.2628 28.5011 40 28.5011C39.7372 28.5011 39.477 28.4494 39.2342 28.3488C38.9914 28.2482 38.7708 28.1008 38.585 27.915L34 23.3275V38.5C34 39.0304 33.7893 39.5391 33.4142 39.9142C33.0391 40.2893 32.5304 40.5 32 40.5C31.4696 40.5 30.9609 40.2893 30.5858 39.9142C30.2107 39.5391 30 39.0304 30 38.5V23.3275L25.415 27.915C25.0397 28.2903 24.5307 28.5011 24 28.5011C23.4693 28.5011 22.9603 28.2903 22.585 27.915C22.2097 27.5397 21.9989 27.0307 21.9989 26.5C21.9989 25.9693 22.2097 25.4603 22.585 25.085ZM52 52.5H12V42.5H19.1725L24 47.3275C24.3701 47.7006 24.8106 47.9963 25.296 48.1976C25.7814 48.3989 26.302 48.5017 26.8275 48.5H37.1725C37.698 48.5017 38.2186 48.3989 38.704 48.1976C39.1894 47.9963 39.6299 47.7006 40 47.3275L44.8275 42.5H52V52.5Z" fill="white"/>
-                </g>
-                <defs>
-                  <clipPath id="clip0_38_12089">
-                    <rect width="64" height="64" fill="white" transform="translate(0 0.5)"/>
-                  </clipPath>
-                </defs>
-              </svg>
+          {/* Render based on UI state */}
+          {uiState === 'idle' && renderIdleState()}
+          {uiState === 'uploading' && renderUploadingState()}
+          {uiState === 'processing' && renderProcessingState()}
+          {uiState === 'success' && renderSuccessState()}
+
+          {/* Error message overlay */}
+          {error && uiState !== 'success' && (
+            <div className="error-overlay">
+              <p className="error-message">{error}</p>
             </div>
-            <div className="upload-text">
-              <h3>Drop tracks & choose stem</h3>
-              <p>Upload up to 20 files to turn into notation</p>
-            </div>
-          </div>
-
-          {/* Bottom Section - Instrument Selector and Browse Button */}
-          <div className="upload-controls">
-            {/* Instrument Selector */}
-            <div className="instrument-selector" ref={dropdownRef}>
-            <button 
-              className="instrument-dropdown-btn"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              disabled={status && status !== 'completed' && status !== 'failed'}
-            >
-              <span className="instrument-label">
-                {instruments.find(i => i.value === selectedInstrument)?.label || 'Select Instrument'}
-              </span>
-              <svg 
-                width="24" 
-                height="24" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-              >
-                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            {isDropdownOpen && (
-              <div className="instrument-dropdown-menu">
-                {instruments.map((instrument) => (
-                  <button
-                    key={instrument.value}
-                    className={`instrument-option ${selectedInstrument === instrument.value ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedInstrument(instrument.value);
-                      setIsDropdownOpen(false);
-                    }}
-                  >
-                    <span>{instrument.label}</span>
-                    {selectedInstrument === instrument.value && (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-            {/* Status and Progress */}
-            {(status || error) && status !== 'completed' && status !== 'succeeded' && status !== 'success' && (
-              <div className="upload-status">
-                <p className={error ? 'error' : 'status-message'}>
-                  {getStatusMessage()}
-                </p>
-                {(status === 'uploading' || status === 'pending' || status === 'running' || status === 'processing') && !error && (
-                  <div className={`progress-bar${progress === 0 ? ' animated' : ''}`}>
-                    <div 
-                      className="progress-fill" 
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button 
-              className="browse-btn" 
-              onClick={handleBrowseClick}
-              disabled={status && status !== 'completed' && status !== 'failed'}
-            >
-              {status && status !== 'completed' && status !== 'failed' 
-                ? 'Processing...' 
-                : 'Browse Files'}
-            </button>
-          </div>
-          </>
           )}
         </div>
         <div className="hero-disclaimer hero-disclaimer-mobile">

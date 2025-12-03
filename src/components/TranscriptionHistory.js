@@ -184,7 +184,7 @@ export const TranscriptionHistory = () => {
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;
-      a.download = `transcription_${workflowId}.txt`;
+      a.download = `transcription_${workflowId}.mid`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
