@@ -116,8 +116,8 @@ function Hero({ onLoginRequired }) {
   const uiState = getUIState();
   console.log('🎨 Current UI State:', uiState);
 
-  // Simulate progress from 11-99% with different speeds for upload vs processing
-  const simulateProgress = (isUploadPhase = false) => {
+  // Simulate progress from 11-99% over 30 seconds
+  const simulateProgress = () => {
     // Clear any existing intervals
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -126,21 +126,17 @@ function Hero({ onLoginRequired }) {
       clearTimeout(progressTimeoutRef.current);
     }
 
-    // Different durations for upload (5s) vs processing (60s)
+    // 30 seconds for both upload and processing phases
     const numSteps = 20;
-    const totalDuration = isUploadPhase ? 5000 : 60000; // 5 seconds for upload, 60 seconds for processing
+    const totalDuration = 30000; // 30 seconds
     const startProgress = 11; // Start at 11%
     const endProgress = 99; // End at 99% until actual completion
     const totalProgressRange = endProgress - startProgress; // 88%
     
-    // Generate random intervals based on phase
+    // Generate random intervals
     const intervals = [];
     for (let i = 0; i < numSteps; i++) {
-      if (isUploadPhase) {
-        intervals.push(Math.random() * 300 + 100); // Random between 100-400ms for fast upload
-      } else {
-        intervals.push(Math.random() * 4000 + 1000); // Random between 1000-5000ms for processing
-      }
+      intervals.push(Math.random() * 2000 + 500); // Random between 500-2500ms
     }
     
     // Normalize to sum to totalDuration
@@ -179,7 +175,7 @@ function Hero({ onLoginRequired }) {
     progressTimeoutRef.current = setTimeout(executeStep, normalizedIntervals[0]);
   };
 
-  // Stop progress simulation and jump to completion
+  // Stop progress simulation
   const stopProgressSimulation = () => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -189,7 +185,7 @@ function Hero({ onLoginRequired }) {
       clearTimeout(progressTimeoutRef.current);
       progressTimeoutRef.current = null;
     }
-    setProgress(100);
+    // Don't set to 100% - keep at current progress (99%)
   };
 
   // Close dropdown when clicking outside
@@ -290,8 +286,17 @@ function Hero({ onLoginRequired }) {
     console.log('🚀 Starting upload - setting status to uploading');
     setStatus('uploading');
     
-    // Start simulated progress for upload (fast 5 seconds)
-    simulateProgress(true);
+    // Start simulated progress for upload (30 seconds)
+    simulateProgress();
+    
+    // Auto-transition to processing after 30 seconds
+    setTimeout(() => {
+      if (status === 'uploading') {
+        console.log('⏰ 30 seconds elapsed, switching to processing state');
+        setStatus('processing');
+        simulateProgress(); // Restart progress for processing phase
+      }
+    }, 30000);
 
     try {
       // Use transcription workflow only for drums, separation workflow for others
@@ -388,21 +393,14 @@ function Hero({ onLoginRequired }) {
             console.log('Progress message:', data.last_progress_message);
           }
           
-          // Check if we're transitioning to a new major state
-          const previousState = status;
-          const isTransitionToProcessing = 
-            (previousState === 'uploading' || previousState === 'pending' || previousState === 'queued') &&
-            (newStatus === 'running' || newStatus === 'processing' || newStatus === 'separating' || 
-             newStatus === 'transcribing' || newStatus === 'generating_sheet');
-          
-          // Restart progress simulation on transition to processing
-          if (isTransitionToProcessing) {
-            simulateProgress(false); // Slow 60-second progress for processing
-          }
-          
           if (newStatus === 'completed' || newStatus === 'succeeded' || newStatus === 'success') {
-            // Stop simulation and jump to 100%
-            stopProgressSimulation();
+            // Stop simulation but DON'T set to 100% yet - wait for download
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+            }
+            if (progressTimeoutRef.current) {
+              clearTimeout(progressTimeoutRef.current);
+            }
             console.log('Workflow completed, downloading transcription output');
             stopped = true;
             // Download first, then batch all state updates together
@@ -412,7 +410,7 @@ function Hero({ onLoginRequired }) {
               setDownloadUrl(objectUrl);
               setDownloadFilename(filename);
               setStatus('completed');
-              setProgress(100);
+              setProgress(100); // Only set to 100% after download completes
             } catch (err) {
               console.error('Download error:', err);
               setError(`Download failed: ${err.message}`);
